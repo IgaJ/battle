@@ -16,7 +16,7 @@ public class Board {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private int width;
-    private int length;
+    private int height;
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "board_id")
     private List<Unit> units;

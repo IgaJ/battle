@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 public class EventPublisher {
     private final ApplicationEventPublisher publisher;
 
-    public void pubslishEvent(CommandEvent event) {
+    public void publishEvent(CommandEvent event) {
         publisher.publishEvent(event);
     }
 }
