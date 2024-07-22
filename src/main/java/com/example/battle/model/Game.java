@@ -21,5 +21,4 @@ public class Game {
     private Map<String, Unit> units;
     @ElementCollection
     private Map<String, LocalDateTime> lastCommands;
-
 }
