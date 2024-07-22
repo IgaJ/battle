@@ -1,23 +1,26 @@
-package com.example.battle.model;
+package com.example.battle.events;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+
+import java.time.LocalDateTime;
 
 @Data
 @Entity
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public abstract class Unit {
+public abstract class CommandEvent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String player;
-    private Position position;
-    private UnitStatus unitStatus;
-    private int moveCount;
+    private String gameId;
+    private String unitId;
+    private LocalDateTime timestamp;
 }
