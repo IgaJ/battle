@@ -18,7 +18,7 @@ public class Game {
     @OneToOne(cascade = CascadeType.ALL)
     private Board board;
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Map<String, Unit> units;
+    private Map<Long, Unit> units;
     @ElementCollection
     private Map<String, LocalDateTime> lastCommands;
 }
