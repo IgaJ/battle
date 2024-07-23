@@ -20,4 +20,6 @@ public abstract class Unit {
     private Position position;
     private UnitStatus unitStatus;
     private int moveCount;
+
+    public abstract long getRequiredInterval(String commandType);
 }

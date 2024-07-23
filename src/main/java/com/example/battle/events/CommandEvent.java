@@ -21,6 +21,6 @@ public abstract class CommandEvent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String gameId;
-    private String unitId;
-    private LocalDateTime timestamp;
+    private Integer unitId;
+    private LocalDateTime lastCommand;
 }

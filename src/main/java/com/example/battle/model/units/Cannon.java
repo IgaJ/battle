@@ -20,4 +20,11 @@ public class Cannon extends Unit {
 
     public Cannon() {
     }
+
+    @Override
+    public long getRequiredInterval(String commandType) {
+        return switch(commandType) {
+            case "fire" -> 13;
+        };
+    }
 }

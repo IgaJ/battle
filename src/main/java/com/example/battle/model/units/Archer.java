@@ -20,4 +20,12 @@ public class Archer extends Unit {
 
     public Archer() {
     }
+
+    @Override
+    public long getRequiredInterval(String commandType) {
+        return switch(commandType) {
+            case "move" -> 5;
+            case "fire" -> 10;
+        };
+    }
 }

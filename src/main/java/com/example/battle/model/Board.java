@@ -28,7 +28,7 @@ public class Board {
     }
 
     public void addUnit(Unit unit, int x, int y) {
-        unit.setPosition(new Position(y, y));
+        //unit.setPosition(new Position(y, y));
         units.add(unit);
     }
 

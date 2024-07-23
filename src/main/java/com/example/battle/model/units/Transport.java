@@ -20,4 +20,11 @@ public class Transport extends Unit {
 
     public Transport() {
     }
+
+    @Override
+    public long getRequiredInterval(String commandType) {
+        return switch(commandType) {
+            case "move" -> 7;
+        };
+    }
 }
