@@ -68,8 +68,8 @@ public class GameService {
         eventPublisher.publishEvent(command);
     }
 
-    public List<UnitDTO> findAll(String playerColor) {
-        List<Unit> units = gameRepository.findAllUnitsByPlayerColor(playerColor);
+    public List<UnitDTO> findAll() {
+        List<Unit> units = gameRepository.findAllUnits();
         return units.stream()
                 .map(UnitDTO::mapToDTO)
                 .collect(Collectors.toList());

@@ -9,6 +9,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface GameRepository extends JpaRepository<Game, Long> {
-    @Query("SELECT u FROM Unit u WHERE u.playerColor = :playerColor")
-    List<Unit> findAllUnitsByPlayerColor(@Param("playerColor") String playerColor);
+    @Query("SELECT u FROM Game g JOIN g.units u")
+    List<Unit> findAllUnits();
 }

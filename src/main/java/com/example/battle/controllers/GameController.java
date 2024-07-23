@@ -21,7 +21,7 @@ public class GameController {
     }
 
     @GetMapping("/units")
-    public ResponseEntity<List<UnitDTO>> listUnits(@RequestParam String playerColor) {
-        return ResponseEntity.ok(gameService.findAll(playerColor));
+    public ResponseEntity<List<UnitDTO>> listUnits() {
+        return ResponseEntity.ok(gameService.findAll());
     }
 }
