@@ -36,14 +36,26 @@ public class CommandEventListener {
                 Position oldPosition = unit.getPosition();
                 Position newPosition = calculateNewPosition(oldPosition, event.getDirection(), event.getSteps());
 
-                if (isPositionValid(newPosition, game.getBoard().getWidth(), game.getBoard().getHeight())
-                        && game.getBoard().getUnitPosition(newPosition.getX(), newPosition.getY()).isEmpty()) {
-                    unit.setPosition(newPosition);
-                    unit.setMoveCount(unit.getMoveCount() + 1);
+                if (isPositionValid(newPosition, game.getBoard().getWidth(), game.getBoard().getHeight())) {
+                    Optional<Unit> targetUnitOptional = game.getBoard().getUnitPosition(newPosition.getX(), newPosition.getY());
+                    if (targetUnitOptional.isPresent()) {
+                        Unit targetUnit = targetUnitOptional.get();
+                        if (!targetUnit.getPlayer().equals(unit.getPlayer())) {
+                            targetUnit.setUnitStatus(UnitStatus.DESTROYED);
+                            unitRepository.save(targetUnit);
+                        } else {
+                            throw new RuntimeException("Pojazd nie może najechać na swoja jednostkę");
+                        }
+                    } else {
+                        unit.setPosition(newPosition);
+                        unit.setMoveCount(unit.getMoveCount() + 1);
+                    }
 
                     event.setLastCommand(LocalDateTime.now());
                     game.getCommands().add(event);
                     unitRepository.save(unit);
+                } else {
+                    throw new RuntimeException("Nowa pozycja jest niepoprawna");
                 }
             }
         }
@@ -61,6 +73,7 @@ public class CommandEventListener {
                 if (cannotExecuteCommand(event.getLastCommand(), unit.getRequiredInterval("fire"))) {
                     throw new RuntimeException("Za wcześnie na wykonanie kolejnej komendy");
                 }
+
                 Position targetPosition = calculateNewPosition(unit.getPosition(), event.getDirection(), event.getDistance());
                 Optional<Unit> targetUnitOptional = game.getBoard().getUnitPosition(targetPosition.getX(), targetPosition.getY());
 
@@ -71,6 +84,7 @@ public class CommandEventListener {
                 }
                 event.setLastCommand(LocalDateTime.now());
                 game.getCommands().add(event);
+                unitRepository.save(unit);
             }
         }
     }

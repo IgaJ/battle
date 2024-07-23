@@ -23,8 +23,10 @@ public class Transport extends Unit {
 
     @Override
     public long getRequiredInterval(String commandType) {
-        return switch(commandType) {
-            case "move" -> 7;
-        };
+        if (commandType.equals("move")) {
+            return 7;
+        } else {
+            throw new RuntimeException("Niewlaściwa komenda dla pojazdu");
+        }
     }
 }

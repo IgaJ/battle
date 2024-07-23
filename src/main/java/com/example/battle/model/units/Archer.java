@@ -23,9 +23,12 @@ public class Archer extends Unit {
 
     @Override
     public long getRequiredInterval(String commandType) {
-        return switch(commandType) {
-            case "move" -> 5;
-            case "fire" -> 10;
-        };
+        if(commandType.equals("move")) {
+            return 5;
+        } else if (commandType.equals("fire")) {
+            return 10;
+        } else  {
+            throw new RuntimeException("Niewłaściwa komenda dla łucznika");
+        }
     }
 }

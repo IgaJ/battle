@@ -23,8 +23,10 @@ public class Cannon extends Unit {
 
     @Override
     public long getRequiredInterval(String commandType) {
-        return switch(commandType) {
-            case "fire" -> 13;
-        };
+        if (commandType.equals("fire")){
+            return 13;
+        } else {
+            throw new RuntimeException("niewłaściwa komenda dla armaty");
+        }
     }
 }
