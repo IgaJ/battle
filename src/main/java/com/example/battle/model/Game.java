@@ -1,10 +1,10 @@
 package com.example.battle.model;
 
+import com.example.battle.events.CommandEvent;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.List;
 
 @Data
 @Entity
@@ -18,7 +18,7 @@ public class Game {
     @OneToOne(cascade = CascadeType.ALL)
     private Board board;
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Map<Long, Unit> units;
+    private List<Unit> units;
     @ElementCollection
-    private Map<String, LocalDateTime> lastCommands;
+    private List<CommandEvent> commands;
 }
