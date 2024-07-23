@@ -1,6 +1,6 @@
 package com.example.battle.controllers;
 
-import com.example.battle.model.Unit;
+import com.example.battle.model.UnitDTO;
 import com.example.battle.services.GameService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -10,7 +10,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/game")
+@RequestMapping("api/v1/game")
 public class GameController {
     private final GameService gameService;
 
@@ -21,8 +21,7 @@ public class GameController {
     }
 
     @GetMapping("/units")
-    public ResponseEntity<List<Unit>> listUnits(@RequestParam String gameId, @RequestParam String player) {
-        List<Unit> units = gameService.listUnits(gameId, player);
-        return ResponseEntity.ok(units);
+    public ResponseEntity<List<UnitDTO>> listUnits(@RequestParam String playerColor) {
+        return ResponseEntity.ok(gameService.findAll(playerColor));
     }
 }

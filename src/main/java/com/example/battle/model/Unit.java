@@ -16,7 +16,7 @@ public abstract class Unit {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String player;
+    private String playerColor;
     private Position position;
     private UnitStatus unitStatus;
     private int moveCount;

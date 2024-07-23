@@ -31,7 +31,10 @@ public class CommandEventListener {
             Unit unit = game.getUnits().get(event.getUnitId());
             if (unit != null && unit.getUnitStatus() == UnitStatus.ACTIVE) {
                 if (cannotExecuteCommand(event.getLastCommand(), unit.getRequiredInterval("move"))) {
-                    throw new RuntimeException("Za wcześnie na wykonanie kolejnej komendy");
+                    throw new RuntimeException("Too early to execute command. Wait");
+                }
+                if (!unit.getPlayerColor().equals(event.getPlayerColor())) {
+                    throw new RuntimeException("Incorrect player color");
                 }
                 Position newPosition = calculateNewPosition(
                         unit.getPosition(),
@@ -44,11 +47,11 @@ public class CommandEventListener {
                     Optional<Unit> targetUnitOptional = game.getBoard().getUnitPosition(newPosition.getX(), newPosition.getY());
                     if (targetUnitOptional.isPresent()) {
                         Unit targetUnit = targetUnitOptional.get();
-                        if (!targetUnit.getPlayer().equals(unit.getPlayer())) {
+                        if (!targetUnit.getPlayerColor().equals(unit.getPlayerColor())) {
                             targetUnit.setUnitStatus(UnitStatus.DESTROYED);
                             unitRepository.save(targetUnit);
                         } else {
-                            throw new RuntimeException("Pojazd nie może najechać na swoja jednostkę");
+                            throw new RuntimeException("The vehicle cannot invade its own unit");
                         }
                     } else {
                         unit.setPosition(newPosition);
@@ -59,7 +62,7 @@ public class CommandEventListener {
                     game.getCommands().add(event);
                     unitRepository.save(unit);
                 } else {
-                    throw new RuntimeException("Nowa pozycja jest niepoprawna");
+                    throw new RuntimeException("Incorrect new position");
                 }
             }
         }
@@ -75,7 +78,11 @@ public class CommandEventListener {
 
             if (unit != null && unit.getUnitStatus() == UnitStatus.ACTIVE) {
                 if (cannotExecuteCommand(event.getLastCommand(), unit.getRequiredInterval("fire"))) {
-                    throw new RuntimeException("Za wcześnie na wykonanie kolejnej komendy");
+                    throw new RuntimeException("Too early to execute command. Wait");
+                }
+
+                if(!unit.getPlayerColor().equals(event.getPlayerColor())) {
+                    throw new RuntimeException("Incorrect player color");
                 }
 
                 Position endPosition = calculateNewPosition(

@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -57,10 +58,6 @@ public class GameService {
         gameRepository.save(game);
     }
 
-    public List<Unit> listUnits(String gameId, String player) {
-        return null;
-    }
-
     @Transactional
     public void moveCommand(MoveCommandEvent command) {
         eventPublisher.publishEvent(command);
@@ -71,43 +68,45 @@ public class GameService {
         eventPublisher.publishEvent(command);
     }
 
+    public List<UnitDTO> findAll(String playerColor) {
+        List<Unit> units = gameRepository.findAllUnitsByPlayerColor(playerColor);
+        return units.stream()
+                .map(UnitDTO::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
     private void addUnits(List<Unit> units, String player, int archerCount, int cannonCount, int transportCount) {
         addUnitsOfType(units, player, archerCount, Archer.class);
         addUnitsOfType(units, player, cannonCount, Cannon.class);
         addUnitsOfType(units, player, transportCount, Transport.class);
     }
 
-        private <T extends Unit> void addUnitsOfType (List<Unit> units, String player, int count, Class<T> unitType) {
-            for (int i = 0; i < count; i++) {
-                try {
-                    T unit = unitType.getDeclaredConstructor().newInstance();
-                    unit.setPlayer(player);
-                    unit.setPosition(randomPosition(width, height, units));
-                    unit.setUnitStatus(UnitStatus.ACTIVE);
-                    unit.setMoveCount(0);
-                    units.add(unit);
+    private <T extends Unit> void addUnitsOfType(List<Unit> units, String player, int count, Class<T> unitType) {
+        for (int i = 0; i < count; i++) {
+            try {
+                T unit = unitType.getDeclaredConstructor().newInstance();
+                unit.setPlayerColor(player);
+                unit.setPosition(randomPosition(width, height, units));
+                unit.setUnitStatus(UnitStatus.ACTIVE);
+                unit.setMoveCount(0);
+                units.add(unit);
 
-                } catch (Exception e) {
-                    throw new RuntimeException("Error creating unit of type: " + unitType.getName(), e);
-                }
+            } catch (Exception e) {
+                throw new RuntimeException("Error creating unit of type: " + unitType.getName(), e);
             }
         }
+    }
 
     private Position randomPosition(int boardWidth, int boardHeight, List<Unit> existingUnits) {
         Random random = new Random();
         Position position;
         do {
             position = new Position(random.nextInt(boardWidth), random.nextInt(boardHeight));
-        } while (isPositionOccupied(position, existingUnits)); // tutaj jest sprawdzenie czy jest już
+        } while (isPositionOccupied(position, existingUnits));
         return position;
     }
 
     private boolean isPositionOccupied(Position position, List<Unit> existingUnits) {
-        boolean positionOcupied = existingUnits.stream().anyMatch(unit -> unit.getPosition().equals(position));
-        if(positionOcupied) {
-            System.out.println("POSITION OCCUPIED: " + position);
-        }
         return existingUnits.stream().anyMatch(unit -> unit.getPosition().equals(position));
     }
-
 }
