@@ -28,7 +28,7 @@ public class Archer extends Unit {
         } else if (commandType.equals("fire")) {
             return 10;
         } else  {
-            throw new RuntimeException("Niewłaściwa komenda dla łucznika");
+            throw new RuntimeException("Incorrect command for an archer");
         }
     }
 }

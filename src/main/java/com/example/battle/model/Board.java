@@ -26,13 +26,4 @@ public class Board {
                 .filter(unit -> unit.getPosition().getX() == x && unit.getPosition().getY() == y)
                 .findFirst();
     }
-
-    public void addUnit(Unit unit, int x, int y) {
-        //unit.setPosition(new Position(y, y));
-        units.add(unit);
-    }
-
-    public void removeUnit(Unit unit) {
-        units.remove(unit);
-    }
 }

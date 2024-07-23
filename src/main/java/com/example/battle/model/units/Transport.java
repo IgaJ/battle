@@ -26,7 +26,7 @@ public class Transport extends Unit {
         if (commandType.equals("move")) {
             return 7;
         } else {
-            throw new RuntimeException("Niewlaściwa komenda dla pojazdu");
+            throw new RuntimeException("Incorrect command for transport");
         }
     }
 }

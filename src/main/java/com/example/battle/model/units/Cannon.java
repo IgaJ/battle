@@ -26,7 +26,7 @@ public class Cannon extends Unit {
         if (commandType.equals("fire")){
             return 13;
         } else {
-            throw new RuntimeException("niewłaściwa komenda dla armaty");
+            throw new RuntimeException("Incorrect command for cannon");
         }
     }
 }
