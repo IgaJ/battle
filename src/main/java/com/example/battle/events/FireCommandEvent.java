@@ -13,5 +13,6 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class FireCommandEvent extends CommandEvent{
     private Direction direction;
-    private int distance;
+    private int verticalDistance;
+    private int horizontalDistance;
 }

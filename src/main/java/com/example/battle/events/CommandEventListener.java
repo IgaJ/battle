@@ -33,8 +33,12 @@ public class CommandEventListener {
                 if (cannotExecuteCommand(event.getLastCommand(), unit.getRequiredInterval("move"))) {
                     throw new RuntimeException("Za wcześnie na wykonanie kolejnej komendy");
                 }
-                Position oldPosition = unit.getPosition();
-                Position newPosition = calculateNewPosition(oldPosition, event.getDirection(), event.getSteps());
+                Position newPosition = calculateNewPosition(
+                        unit.getPosition(),
+                        event.getDirection(),
+                        event.getVerticalSteps(),
+                        event.getHorizontalSteps()
+                );
 
                 if (isPositionValid(newPosition, game.getBoard().getWidth(), game.getBoard().getHeight())) {
                     Optional<Unit> targetUnitOptional = game.getBoard().getUnitPosition(newPosition.getX(), newPosition.getY());
@@ -74,8 +78,13 @@ public class CommandEventListener {
                     throw new RuntimeException("Za wcześnie na wykonanie kolejnej komendy");
                 }
 
-                Position targetPosition = calculateNewPosition(unit.getPosition(), event.getDirection(), event.getDistance());
-                Optional<Unit> targetUnitOptional = game.getBoard().getUnitPosition(targetPosition.getX(), targetPosition.getY());
+                Position endPosition = calculateNewPosition(
+                        unit.getPosition(),
+                        event.getDirection(),
+                        event.getVerticalDistance(),
+                        event.getHorizontalDistance()
+                );
+                Optional<Unit> targetUnitOptional = game.getBoard().getUnitPosition(endPosition.getX(), endPosition.getY());
 
                 if (targetUnitOptional.isPresent()) {
                     Unit targetUnit = targetUnitOptional.get();
@@ -101,12 +110,20 @@ public class CommandEventListener {
         return position.getX() >= 0 && position.getX() < width && position.getY() >= 0 && position.getY() < height;
     }
 
-    private Position calculateNewPosition(Position oldPosition, Direction direction, int distance) {
+    private Position calculateNewPosition(Position oldPosition, Direction direction, int verticalDistance, int horizontalDistance) {
         return switch (direction) {
-            case UP -> new Position(oldPosition.getX(), oldPosition.getY() - distance);
-            case DOWN -> new Position(oldPosition.getX(), oldPosition.getY() + distance);
-            case LEFT -> new Position(oldPosition.getX() - distance, oldPosition.getY());
-            case RIGHT -> new Position(oldPosition.getX() + distance, oldPosition.getY());
+            case UP -> new Position(oldPosition.getX(), oldPosition.getY() - verticalDistance);
+            case DOWN -> new Position(oldPosition.getX(), oldPosition.getY() + verticalDistance);
+            case LEFT -> new Position(oldPosition.getX() - horizontalDistance, oldPosition.getY());
+            case RIGHT -> new Position(oldPosition.getX() + horizontalDistance, oldPosition.getY());
+            case UP_LEFT ->
+                    new Position(oldPosition.getX() - horizontalDistance, oldPosition.getY() - verticalDistance);
+            case UP_RIGHT ->
+                    new Position(oldPosition.getX() + horizontalDistance, oldPosition.getY() - verticalDistance);
+            case DOWN_LEFT ->
+                    new Position(oldPosition.getX() - horizontalDistance, oldPosition.getY() + verticalDistance);
+            case DOWN_RIGHT ->
+                    new Position(oldPosition.getX() + horizontalDistance, oldPosition.getY() + verticalDistance);
         };
     }
 }

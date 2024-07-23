@@ -13,5 +13,6 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class MoveCommandEvent extends CommandEvent{
     private Direction direction;
-    private int steps;
+    private int verticalSteps;
+    private int horizontalSteps;
 }
