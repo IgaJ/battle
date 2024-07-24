@@ -1,5 +1,6 @@
-package com.example.battle.model;
+package com.example.battle.model.units;
 
+import com.example.battle.model.Position;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;

@@ -1,11 +1,13 @@
 package com.example.battle.controllers;
 
-import com.example.battle.model.Unit;
-import com.example.battle.model.UnitDTO;
+import com.example.battle.model.units.UnitDTO;
 import com.example.battle.services.GameService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -22,6 +24,11 @@ public class GameController {
 
     @GetMapping("/units")
     public ResponseEntity<List<UnitDTO>> listUnits() {
-        return ResponseEntity.ok(gameService.findAll());
+        return ResponseEntity.ok(gameService.findUnitsInActiveGame());
+    }
+
+    @GetMapping("/board")
+    public void printBoard() {
+       gameService.printBoard();
     }
 }

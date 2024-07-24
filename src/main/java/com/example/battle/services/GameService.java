@@ -1,28 +1,20 @@
 package com.example.battle.services;
 
-import com.example.battle.events.FireCommandEvent;
-import com.example.battle.events.MoveCommandEvent;
 import com.example.battle.model.*;
-import com.example.battle.model.units.Archer;
-import com.example.battle.model.units.Cannon;
-import com.example.battle.model.units.Transport;
+import com.example.battle.model.units.*;
 import com.example.battle.repositories.GameRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class GameService {
     private final GameRepository gameRepository;
-    private final EventPublisher eventPublisher;
 
     @Value("${board.width}")
     private int width;
@@ -62,7 +54,48 @@ public class GameService {
         game.setActive(true);
         gameRepository.save(game);
 
+        printBoard(board);
+
         return units.stream().map(UnitDTO::mapToDTO).collect(Collectors.toList());
+    }
+
+    private void printBoard(Board board) {
+        Map<Position, Unit> unitPositionMap = new HashMap<>();
+
+        // mapowane jednostki na pozycje
+        for (Unit unit : board.getUnits()) {
+            Position pos = unit.getPosition();
+            unitPositionMap.put(pos, unit);
+        }
+
+        int columnWidth = 10;
+
+        // numery kolumn
+        System.out.print(" ");
+        for (int x = 0; x < width; x++) {
+            System.out.printf("%" + columnWidth + "d", x);
+        }
+        System.out.println();
+
+        // wiersze
+        for (int y = 0; y < height; y++) {
+            System.out.printf("%2d ", y);
+            for (int x = 0; x < width; x++) {
+                Position pos = new Position(x, y);
+                if (unitPositionMap.containsKey(pos)) {
+                    Unit unit = unitPositionMap.get(pos);
+                    String unitType = unit.getUnitType().name().substring(0, 1);  // Pierwsza litera typu jednostki
+                    String unitColor = unit.getColor().substring(0, 1);  // Pierwsza litera koloru
+                    String unitId = unit.getId().toString();  // ID jednostki
+
+                    String unitRepresentation = unitType + "/" + unitColor + "/" + unitId;
+                    System.out.printf("%-" + columnWidth + "s", unitRepresentation);
+                } else {
+                    System.out.printf("%-" + columnWidth + "s", "X");
+                }
+            }
+            System.out.println();
+        }
     }
 
     private void addUnits(List<Unit> units, String color, int archerCount, int cannonCount, int transportCount) {
@@ -97,21 +130,23 @@ public class GameService {
         }
     }
 
-    @Transactional
-    public void moveCommand(MoveCommandEvent command) {
-        eventPublisher.publishEvent(command);
-    }
-
-    @Transactional
-    public void fireCommand(FireCommandEvent command) {
-        eventPublisher.publishEvent(command);
-    }
-
     public List<UnitDTO> findAll() {
         List<Unit> units = gameRepository.findAllUnits();
         return units.stream()
                 .map(UnitDTO::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    public List<UnitDTO> findUnitsInActiveGame() {
+        Optional<Game> game = gameRepository.findByActiveTrue();
+        List<UnitDTO> units = new ArrayList<>();
+        if (game.isPresent()) {
+            units.addAll(game.get().getUnits().stream()
+                    .map(UnitDTO::mapToDTO).toList());
+        } else {
+            throw new RuntimeException("No active game found");
+        }
+        return units;
     }
 
     private Position randomPosition(int boardWidth, int boardHeight, List<Unit> existingUnits) {
@@ -125,5 +160,10 @@ public class GameService {
 
     private boolean isPositionOccupied(Position position, List<Unit> existingUnits) {
         return existingUnits.stream().anyMatch(unit -> unit.getPosition().equals(position));
+    }
+
+
+    public void printBoard() {
+        gameRepository.findByActiveTrue().ifPresent(game -> printBoard(game.getBoard()));
     }
 }

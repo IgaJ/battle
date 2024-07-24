@@ -1,5 +1,6 @@
 package com.example.battle.model;
 
+import com.example.battle.model.units.Unit;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -1,4 +1,4 @@
-package com.example.battle.events;
+package com.example.battle.model.commands;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,12 +16,12 @@ import java.time.LocalDateTime;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public abstract class CommandEvent {
+public abstract class Command {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String gameId;
-    private Integer unitId;
+    private Long gameId;
+    private Long unitId;
     private LocalDateTime lastCommand;
     private String color;
 }

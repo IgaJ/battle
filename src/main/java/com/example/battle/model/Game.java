@@ -1,6 +1,7 @@
 package com.example.battle.model;
 
-import com.example.battle.events.CommandEvent;
+import com.example.battle.model.commands.Command;
+import com.example.battle.model.units.Unit;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,7 +20,7 @@ public class Game {
     private Board board;
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Unit> units;
-    @ElementCollection
-    private List<CommandEvent> commandHistory;
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Command> commandHistory;
     private boolean active;
 }

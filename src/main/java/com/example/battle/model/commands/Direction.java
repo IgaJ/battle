@@ -1,4 +1,4 @@
-package com.example.battle.events;
+package com.example.battle.model.commands;
 
 public enum Direction {
     UP,
