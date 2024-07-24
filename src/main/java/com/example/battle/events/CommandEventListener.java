@@ -33,7 +33,7 @@ public class CommandEventListener {
                 if (cannotExecuteCommand(event.getLastCommand(), unit.getRequiredInterval("move"))) {
                     throw new RuntimeException("Too early to execute command. Wait");
                 }
-                if (!unit.getPlayerColor().equals(event.getPlayerColor())) {
+                if (!unit.getColor().equals(event.getColor())) {
                     throw new RuntimeException("Incorrect player color");
                 }
                 Position newPosition = calculateNewPosition(
@@ -47,7 +47,7 @@ public class CommandEventListener {
                     Optional<Unit> targetUnitOptional = game.getBoard().getUnitPosition(newPosition.getX(), newPosition.getY());
                     if (targetUnitOptional.isPresent()) {
                         Unit targetUnit = targetUnitOptional.get();
-                        if (!targetUnit.getPlayerColor().equals(unit.getPlayerColor())) {
+                        if (!targetUnit.getColor().equals(unit.getColor())) {
                             targetUnit.setUnitStatus(UnitStatus.DESTROYED);
                             unitRepository.save(targetUnit);
                         } else {
@@ -59,7 +59,7 @@ public class CommandEventListener {
                     }
 
                     event.setLastCommand(LocalDateTime.now());
-                    game.getCommands().add(event);
+                    game.getCommandHistory().add(event);
                     unitRepository.save(unit);
                 } else {
                     throw new RuntimeException("Incorrect new position");
@@ -81,7 +81,7 @@ public class CommandEventListener {
                     throw new RuntimeException("Too early to execute command. Wait");
                 }
 
-                if(!unit.getPlayerColor().equals(event.getPlayerColor())) {
+                if(!unit.getColor().equals(event.getColor())) {
                     throw new RuntimeException("Incorrect player color");
                 }
 
@@ -99,7 +99,7 @@ public class CommandEventListener {
                     unitRepository.save(targetUnit);
                 }
                 event.setLastCommand(LocalDateTime.now());
-                game.getCommands().add(event);
+                game.getCommandHistory().add(event);
                 unitRepository.save(unit);
             }
         }

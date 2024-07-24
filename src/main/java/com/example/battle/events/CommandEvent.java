@@ -23,5 +23,5 @@ public abstract class CommandEvent {
     private String gameId;
     private Integer unitId;
     private LocalDateTime lastCommand;
-    private String playerColor;
+    private String color;
 }

@@ -1,9 +1,6 @@
 package com.example.battle.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -16,7 +13,8 @@ public abstract class Unit {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String playerColor;
+    private UnitType unitType;
+    private String color;
     private Position position;
     private UnitStatus unitStatus;
     private int moveCount;

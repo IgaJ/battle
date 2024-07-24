@@ -20,5 +20,6 @@ public class Game {
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Unit> units;
     @ElementCollection
-    private List<CommandEvent> commands;
+    private List<CommandEvent> commandHistory;
+    private boolean active;
 }

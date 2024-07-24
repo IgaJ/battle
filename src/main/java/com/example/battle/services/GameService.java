@@ -40,7 +40,12 @@ public class GameService {
     private int transportCount;
 
     @PostConstruct
-    public void createNewGame() {
+    public List<UnitDTO> createNewGame() {
+        List<Game> games = gameRepository.findAll();
+        for (Game game : games) {
+            game.setActive(false);
+        }
+
         Board board = new Board();
         board.setWidth(width);
         board.setHeight(height);
@@ -53,9 +58,43 @@ public class GameService {
         Game game = new Game();
         game.setBoard(board);
         game.setUnits(units);
-        game.setCommands(new ArrayList<>());
-
+        game.setCommandHistory(new ArrayList<>());
+        game.setActive(true);
         gameRepository.save(game);
+
+        return units.stream().map(UnitDTO::mapToDTO).collect(Collectors.toList());
+    }
+
+    private void addUnits(List<Unit> units, String color, int archerCount, int cannonCount, int transportCount) {
+        for (int i = 0; i < archerCount; i++) {
+            Unit unit = new Archer();
+            unit.setUnitType(UnitType.ARCHER);
+            unit.setColor(color);
+            unit.setPosition(randomPosition(width, height, units));
+            unit.setUnitStatus(UnitStatus.ACTIVE);
+            unit.setMoveCount(0);
+            units.add(unit);
+        }
+
+        for (int i = 0; i < cannonCount; i++) {
+            Unit unit = new Cannon();
+            unit.setUnitType(UnitType.CANNON);
+            unit.setColor(color);
+            unit.setPosition(randomPosition(width, height, units));
+            unit.setUnitStatus(UnitStatus.ACTIVE);
+            unit.setMoveCount(0);
+            units.add(unit);
+        }
+
+        for (int i = 0; i < transportCount; i++) {
+            Unit unit = new Transport();
+            unit.setUnitType(UnitType.TRANSPORT);
+            unit.setColor(color);
+            unit.setPosition(randomPosition(width, height, units));
+            unit.setUnitStatus(UnitStatus.ACTIVE);
+            unit.setMoveCount(0);
+            units.add(unit);
+        }
     }
 
     @Transactional
@@ -73,28 +112,6 @@ public class GameService {
         return units.stream()
                 .map(UnitDTO::mapToDTO)
                 .collect(Collectors.toList());
-    }
-
-    private void addUnits(List<Unit> units, String player, int archerCount, int cannonCount, int transportCount) {
-        addUnitsOfType(units, player, archerCount, Archer.class);
-        addUnitsOfType(units, player, cannonCount, Cannon.class);
-        addUnitsOfType(units, player, transportCount, Transport.class);
-    }
-
-    private <T extends Unit> void addUnitsOfType(List<Unit> units, String player, int count, Class<T> unitType) {
-        for (int i = 0; i < count; i++) {
-            try {
-                T unit = unitType.getDeclaredConstructor().newInstance();
-                unit.setPlayerColor(player);
-                unit.setPosition(randomPosition(width, height, units));
-                unit.setUnitStatus(UnitStatus.ACTIVE);
-                unit.setMoveCount(0);
-                units.add(unit);
-
-            } catch (Exception e) {
-                throw new RuntimeException("Error creating unit of type: " + unitType.getName(), e);
-            }
-        }
     }
 
     private Position randomPosition(int boardWidth, int boardHeight, List<Unit> existingUnits) {

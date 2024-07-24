@@ -1,8 +1,6 @@
 package com.example.battle.model.units;
 
-import com.example.battle.model.Position;
-import com.example.battle.model.Unit;
-import com.example.battle.model.UnitStatus;
+import com.example.battle.model.*;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.*;
@@ -14,8 +12,8 @@ import lombok.experimental.SuperBuilder;
 @DiscriminatorValue("TRANSPORT")
 @EqualsAndHashCode(callSuper = true)
 public class Transport extends Unit {
-    public Transport(Long id, String player, Position position, UnitStatus unitStatus, int moveCount) {
-        super(id, player, position, unitStatus, moveCount);
+    public Transport(Long id, UnitType unitType, String color, Position position, UnitStatus unitStatus, int moveCount) {
+        super(id, unitType, color, position, unitStatus, moveCount);
     }
 
     public Transport() {

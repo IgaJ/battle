@@ -1,5 +1,6 @@
 package com.example.battle.controllers;
 
+import com.example.battle.model.Unit;
 import com.example.battle.model.UnitDTO;
 import com.example.battle.services.GameService;
 import lombok.RequiredArgsConstructor;
@@ -15,9 +16,8 @@ public class GameController {
     private final GameService gameService;
 
     @PostMapping("/new")
-    public ResponseEntity<String> newGame() {
-        gameService.createNewGame();
-        return ResponseEntity.ok("New game created");
+    public ResponseEntity<List<UnitDTO>> newGame() {
+        return ResponseEntity.ok(gameService.createNewGame());
     }
 
     @GetMapping("/units")
