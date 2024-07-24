@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/vi//command")
+@RequestMapping("api/vi/command")
 public class CommandController {
 
     private final GameService gameService;

@@ -49,6 +49,7 @@ public class CommandEventListener {
                         Unit targetUnit = targetUnitOptional.get();
                         if (!targetUnit.getColor().equals(unit.getColor())) {
                             targetUnit.setUnitStatus(UnitStatus.DESTROYED);
+                            game.getUnits().remove(targetUnit);
                             unitRepository.save(targetUnit);
                         } else {
                             throw new RuntimeException("The vehicle cannot invade its own unit");
@@ -96,6 +97,7 @@ public class CommandEventListener {
                 if (targetUnitOptional.isPresent()) {
                     Unit targetUnit = targetUnitOptional.get();
                     targetUnit.setUnitStatus(UnitStatus.DESTROYED);
+                    game.getUnits().remove(targetUnit);
                     unitRepository.save(targetUnit);
                 }
                 event.setLastCommand(LocalDateTime.now());
