@@ -1,7 +1,6 @@
 package com.example.battle.controllers;
 
-import com.example.battle.model.commands.FireCommand;
-import com.example.battle.model.commands.MoveCommand;
+import com.example.battle.model.commands.CommandDTO;
 import com.example.battle.services.CommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,22 +14,20 @@ public class CommandController {
     private final CommandService commandService;
 
     @PostMapping("/move")
-    public ResponseEntity<String> moveUnit(@RequestParam String color, @RequestBody MoveCommand command) {
-        command.setColor(color);
-        commandService.move(command);
-        return ResponseEntity.ok("Move command processed");
+    public ResponseEntity<Void> moveUnit(@RequestParam String color, @RequestBody CommandDTO commandDTO) {
+        commandService.move(color, commandDTO);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/fire")
-    public ResponseEntity<String> fire(@RequestParam String color, @RequestBody FireCommand command) {
-        command.setColor(color);
-        commandService.fire(command);
-        return ResponseEntity.ok("Fire command processed");
+    public ResponseEntity<Void> fire(@RequestParam String color, @RequestBody CommandDTO commandDTO) {
+        commandService.fire(color, commandDTO);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/random")
-    public ResponseEntity<String> randomMove(@RequestParam String playerColor) {
-        // to be completed
-        return null;
+    public ResponseEntity<Void> randomMove(@RequestParam String color, @RequestBody CommandDTO commandDTO) {
+        commandService.randomMove(color, commandDTO);
+        return ResponseEntity.noContent().build();
     }
 }

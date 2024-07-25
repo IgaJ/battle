@@ -1,11 +1,14 @@
 package com.example.battle.services;
 
-import com.example.battle.model.*;
+import com.example.battle.config.BoardConfiguration;
+import com.example.battle.config.UnitConfiguration;
+import com.example.battle.mapers.UnitMapper;
+import com.example.battle.model.Game;
+import com.example.battle.model.Position;
 import com.example.battle.model.units.*;
 import com.example.battle.repositories.GameRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -15,22 +18,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GameService {
     private final GameRepository gameRepository;
-
-    @Value("${board.width}")
-    private int width;
-
-    @Value("${board.height}")
-    private int height;
-
-    @Value("${unit.archers}")
-    private int archerCount;
-
-    @Value("${unit.cannons}")
-    private int cannonCount;
-
-    @Value("${unit.transports}")
-    private int transportCount;
-
+    private final UnitConfiguration unitConfiguration;
+    private final BoardConfiguration boardConfiguration;
+    private final UnitMapper unitMapper;
     @PostConstruct
     public List<UnitDTO> createNewGame() {
         List<Game> games = gameRepository.findAll();
@@ -38,49 +28,39 @@ public class GameService {
             game.setActive(false);
         }
 
-        Board board = new Board();
-        board.setWidth(width);
-        board.setHeight(height);
-
         List<Unit> units = new ArrayList<>();
-        addUnits(units, "white", archerCount, cannonCount, transportCount);
-        addUnits(units, "black", archerCount, cannonCount, transportCount);
-        board.setUnits(units);
+        setUnitPositions(units, "white", unitConfiguration.getArcherCount(), unitConfiguration.getCannonCount(), unitConfiguration.getTransportCount());
+        setUnitPositions(units, "black", unitConfiguration.getArcherCount(), unitConfiguration.getCannonCount(), unitConfiguration.getTransportCount());
 
         Game game = new Game();
-        game.setBoard(board);
         game.setUnits(units);
         game.setCommandHistory(new ArrayList<>());
         game.setActive(true);
         gameRepository.save(game);
 
-        printBoard(board);
+        printBoard(units);
 
-        return units.stream().map(UnitDTO::mapToDTO).collect(Collectors.toList());
+        return units.stream().map(unitMapper::map).collect(Collectors.toList());
     }
 
-    private void printBoard(Board board) {
+    private void printBoard(List<Unit> units) {
         Map<Position, Unit> unitPositionMap = new HashMap<>();
 
         // mapowane jednostki na pozycje
-        for (Unit unit : board.getUnits()) {
+        for (Unit unit : units) {
             Position pos = unit.getPosition();
             unitPositionMap.put(pos, unit);
         }
 
         int columnWidth = 10;
-
-        // numery kolumn
         System.out.print(" ");
-        for (int x = 0; x < width; x++) {
+        for (int x = 0; x < boardConfiguration.getWidth(); x++) {
             System.out.printf("%" + columnWidth + "d", x);
         }
         System.out.println();
-
-        // wiersze
-        for (int y = 0; y < height; y++) {
+        for (int y = 0; y < boardConfiguration.getHeight(); y++) {
             System.out.printf("%2d ", y);
-            for (int x = 0; x < width; x++) {
+            for (int x = 0; x < boardConfiguration.getWidth(); x++) {
                 Position pos = new Position(x, y);
                 if (unitPositionMap.containsKey(pos)) {
                     Unit unit = unitPositionMap.get(pos);
@@ -98,12 +78,12 @@ public class GameService {
         }
     }
 
-    private void addUnits(List<Unit> units, String color, int archerCount, int cannonCount, int transportCount) {
+    private void setUnitPositions(List<Unit> units, String color, int archerCount, int cannonCount, int transportCount) {
         for (int i = 0; i < archerCount; i++) {
             Unit unit = new Archer();
             unit.setUnitType(UnitType.ARCHER);
             unit.setColor(color);
-            unit.setPosition(randomPosition(width, height, units));
+            unit.setPosition(randomPosition(boardConfiguration.getWidth(), boardConfiguration.getHeight(), units));
             unit.setUnitStatus(UnitStatus.ACTIVE);
             unit.setMoveCount(0);
             units.add(unit);
@@ -113,7 +93,7 @@ public class GameService {
             Unit unit = new Cannon();
             unit.setUnitType(UnitType.CANNON);
             unit.setColor(color);
-            unit.setPosition(randomPosition(width, height, units));
+            unit.setPosition(randomPosition(boardConfiguration.getWidth(), boardConfiguration.getHeight(), units));
             unit.setUnitStatus(UnitStatus.ACTIVE);
             unit.setMoveCount(0);
             units.add(unit);
@@ -123,7 +103,7 @@ public class GameService {
             Unit unit = new Transport();
             unit.setUnitType(UnitType.TRANSPORT);
             unit.setColor(color);
-            unit.setPosition(randomPosition(width, height, units));
+            unit.setPosition(randomPosition(boardConfiguration.getWidth(), boardConfiguration.getHeight(), units));
             unit.setUnitStatus(UnitStatus.ACTIVE);
             unit.setMoveCount(0);
             units.add(unit);
@@ -133,7 +113,7 @@ public class GameService {
     public List<UnitDTO> findAll() {
         List<Unit> units = gameRepository.findAllUnits();
         return units.stream()
-                .map(UnitDTO::mapToDTO)
+                .map(unitMapper::map)
                 .collect(Collectors.toList());
     }
 
@@ -142,7 +122,7 @@ public class GameService {
         List<UnitDTO> units = new ArrayList<>();
         if (game.isPresent()) {
             units.addAll(game.get().getUnits().stream()
-                    .map(UnitDTO::mapToDTO).toList());
+                    .map(unitMapper::map).toList());
         } else {
             throw new RuntimeException("No active game found");
         }
@@ -164,6 +144,6 @@ public class GameService {
 
 
     public void printBoard() {
-        gameRepository.findByActiveTrue().ifPresent(game -> printBoard(game.getBoard()));
+        gameRepository.findByActiveTrue().ifPresent(game -> printBoard(game.getUnits()));
     }
 }

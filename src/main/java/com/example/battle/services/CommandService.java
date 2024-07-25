@@ -1,12 +1,13 @@
 package com.example.battle.services;
 
+import com.example.battle.config.BoardConfiguration;
+import com.example.battle.mapers.CommandMapper;
 import com.example.battle.model.Game;
 import com.example.battle.model.Position;
+import com.example.battle.model.commands.Command;
+import com.example.battle.model.commands.CommandDTO;
 import com.example.battle.model.commands.Direction;
-import com.example.battle.model.commands.FireCommand;
-import com.example.battle.model.commands.MoveCommand;
-import com.example.battle.model.units.Unit;
-import com.example.battle.model.units.UnitStatus;
+import com.example.battle.model.units.*;
 import com.example.battle.repositories.GameRepository;
 import com.example.battle.repositories.UnitRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,9 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 
 @Component
 @RequiredArgsConstructor
@@ -27,57 +28,50 @@ public class CommandService {
     private final UnitRepository unitRepository;
     private final GameService gameService;
 
+    private final BoardConfiguration boardConfiguration;
+    private final CommandMapper commandMapper;
+
+
     @Transactional
-    public void move(MoveCommand command) {
-        Optional<Game> gameOptional = gameRepository.findById(command.getGameId());
+    public void move(String color, CommandDTO commandDTO) {
+        Optional<Game> gameOptional = gameRepository.findById(commandDTO.getGameId());
         if (gameOptional.isPresent()) {
             Game game = gameOptional.get();
-            List<Unit> units = game.getUnits();
-            System.out.println("Lista unitów dla gry " + game.getId());
-            for (Unit unit : units) {
-                System.out.println(unit.getUnitType() + " " + unit.getColor() + " " + unit.getPosition());
-            }
-            //Unit unit = game.getUnits().get(command.getUnitId()-1);
-            Unit unit = game.getUnits().stream().filter(u -> Objects.equals(u.getId(), command.getUnitId())).findFirst().orElse(null);
-            System.out.println("Unit który ma się poruszać" + unit.getUnitType() + " " + unit.getColor());
+            Unit unit = game.getUnits().stream().filter(u -> Objects.equals(u.getId(), commandDTO.getUnitId())).findFirst().orElse(null);
+
             if (unit != null && unit.getUnitStatus() == UnitStatus.ACTIVE) {
-                if (cannotExecuteCommand(command.getLastCommand(), unit.getRequiredInterval("move"))) {
+                if (cannotExecuteCommand(commandDTO.getLastCommand(), unit.getRequiredInterval("move"))) {
                     throw new RuntimeException("Too early to execute command. Wait");
                 }
-                if (!unit.getColor().equals(command.getColor())) {
+                if (!unit.getColor().equals(color)) {
                     throw new RuntimeException("Incorrect player color");
                 }
                 Position newPosition = calculateNewPosition(
                         unit.getPosition(),
-                        command.getDirection(),
-                        command.getVerticalSteps(),
-                        command.getHorizontalSteps()
+                        commandDTO.getDirection(),
+                        commandDTO.getVerticalSteps(),
+                        commandDTO.getHorizontalSteps()
                 );
 
-                if (isPositionValid(newPosition, game.getBoard().getWidth(), game.getBoard().getHeight())) {
-                    Optional<Unit> targetUnitOptional = game.getBoard().getUnitPosition(newPosition.getX(), newPosition.getY());
+                if (isPositionValid(newPosition, boardConfiguration.getWidth(), boardConfiguration.getHeight())) {
+                    Optional<Unit> targetUnitOptional = game.getUnits().stream()
+                            .filter(found -> found.getPosition().equals(newPosition))
+                            .findFirst();
                     if (targetUnitOptional.isPresent()) {
                         Unit targetUnit = targetUnitOptional.get();
-                        System.out.println("Target: " + targetUnit.getUnitType() + " " + targetUnit.getColor());
                         if (!targetUnit.getColor().equals(unit.getColor())) {
                             targetUnit.setUnitStatus(UnitStatus.DESTROYED);
-                            System.out.println("Cel zniszczony: " + targetUnit.getUnitType() + " " + targetUnit.getColor());
+                            unit.setPosition(newPosition);
                             game.getUnits().remove(targetUnit);
-                            List<Unit> units1 = game.getUnits();
-                            System.out.println("Aktualna lista unitów dla gry " + game.getId());
-                            for (Unit unit1 : units1) {
-                                System.out.println(unit1.getUnitType() + " " + unit1.getColor() + " " + unit1.getPosition());
-                            }
                             unitRepository.save(targetUnit);
                         } else {
                             throw new RuntimeException("The vehicle cannot invade its own unit");
                         }
                     } else {
                         unit.setPosition(newPosition);
-                        System.out.println("Jednostka " + unit.getUnitType() + " " + unit.getColor() + "przesunięta na " + newPosition);
                         unit.setMoveCount(unit.getMoveCount() + 1);
                     }
-
+                    Command command = commandMapper.map(commandDTO);
                     command.setLastCommand(LocalDateTime.now());
                     game.getCommandHistory().add(command);
                     unitRepository.save(unit);
@@ -90,44 +84,81 @@ public class CommandService {
     }
 
     @Transactional
-    public void fire(FireCommand command) {
-        Optional<Game> gameOptional = gameRepository.findById(command.getGameId());
+    public void fire(String color, CommandDTO commandDTO) {
+        Optional<Game> gameOptional = gameRepository.findById(commandDTO.getGameId());
         if (gameOptional.isPresent()) {
             Game game = gameOptional.get();
-            //Unit unit = game.getUnits().get(command.getUnitId()-1);
-
-            Unit unit = game.getUnits().stream().filter(u -> Objects.equals(u.getId(), command.getUnitId())).findFirst().orElse(null);
+            Unit unit = game.getUnits().stream().filter(u -> Objects.equals(u.getId(), commandDTO.getUnitId())).findFirst().orElse(null);
             if (unit != null && unit.getUnitStatus() == UnitStatus.ACTIVE) {
-                if (cannotExecuteCommand(command.getLastCommand(), unit.getRequiredInterval("fire"))) {
+                if (cannotExecuteCommand(commandDTO.getLastCommand(), unit.getRequiredInterval("fire"))) {
                     throw new RuntimeException("Too early to execute command. Wait");
                 }
 
-                if(!unit.getColor().equals(command.getColor())) {
+                if (!unit.getColor().equals(color)) {
                     throw new RuntimeException("Incorrect player color");
                 }
 
-                Position endPosition = calculateNewPosition(
+                Position newPosition = calculateNewPosition(
                         unit.getPosition(),
-                        command.getDirection(),
-                        command.getVerticalSteps(),
-                        command.getHorizontalSteps()
+                        commandDTO.getDirection(),
+                        commandDTO.getVerticalSteps(),
+                        commandDTO.getHorizontalSteps()
                 );
-                Optional<Unit> targetUnitOptional = game.getBoard().getUnitPosition(endPosition.getX(), endPosition.getY());
+                Optional<Unit> targetUnitOptional = game.getUnits().stream()
+                        .filter(found -> found.getPosition().equals(newPosition))
+                        .findFirst();
 
                 if (targetUnitOptional.isPresent()) {
                     Unit targetUnit = targetUnitOptional.get();
-                    System.out.println("Target: " + targetUnit.getUnitType() + " " + targetUnit.getColor());
                     targetUnit.setUnitStatus(UnitStatus.DESTROYED);
-                    System.out.println("Cel zniszczony: " + targetUnit.getUnitType() + " " + targetUnit.getColor());
                     game.getUnits().remove(targetUnit);
                     unitRepository.save(targetUnit);
                 }
+                Command command = commandMapper.map(commandDTO);
                 command.setLastCommand(LocalDateTime.now());
                 game.getCommandHistory().add(command);
                 unitRepository.save(unit);
                 gameService.printBoard();
             }
         }
+    }
+
+    public void randomMove(String color, CommandDTO commandDTO) {
+        Optional<Game> gameOptional = gameRepository.findById(commandDTO.getGameId());
+        if (gameOptional.isPresent()) {
+            Game game = gameOptional.get();
+            Unit unit = game.getUnits().stream().filter(u -> Objects.equals(u.getId(), commandDTO.getUnitId())).findFirst().orElse(null);
+
+            if (unit != null & unit.getUnitStatus() == UnitStatus.ACTIVE) {
+                CommandDTO dto = generateRandomMove(commandDTO.getGameId(), commandDTO.getUnitId());
+                if (unit instanceof Archer) {
+                    if (new Random().nextBoolean()) {
+                        move(color, dto);
+                    } else {
+                        fire(color, dto);
+                    }
+                } else if (unit instanceof Transport) {
+                    move(color, dto);
+                } else if (unit instanceof Cannon) {
+                    fire(color, commandDTO);
+                }
+            }
+        }
+    }
+
+    private CommandDTO generateRandomMove(Long gameId, Long unitId) {
+        Random random = new Random();
+        Direction direction = Direction.values()[random.nextInt(Direction.values().length)];
+        int verticalSteps = random.nextInt(3) + 1;
+        int horizontalSteps = random.nextInt(3) + 1;
+
+        CommandDTO commandDTO = new CommandDTO();
+        commandDTO.setGameId(gameId);
+        commandDTO.setUnitId(unitId);
+        commandDTO.setDirection(direction);
+        commandDTO.setVerticalSteps(verticalSteps);
+        commandDTO.setHorizontalSteps(horizontalSteps);
+        return commandDTO;
     }
 
     private boolean cannotExecuteCommand(LocalDateTime lastCommand, long requiredInterval) {
