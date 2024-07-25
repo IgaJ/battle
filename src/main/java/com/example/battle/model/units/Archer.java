@@ -6,7 +6,8 @@ import jakarta.persistence.Entity;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-@Data
+@Getter
+@Setter
 @Entity
 @SuperBuilder
 @DiscriminatorValue("ARCHER")

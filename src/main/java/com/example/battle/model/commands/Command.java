@@ -4,19 +4,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Entity
-@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public abstract class Command {
+public class Command {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,4 +21,7 @@ public abstract class Command {
     private Long unitId;
     private LocalDateTime lastCommand;
     private String color;
+    private Direction direction;
+    private int verticalSteps;
+    private int horizontalSteps;
 }

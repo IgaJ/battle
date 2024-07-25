@@ -7,7 +7,8 @@ import lombok.*;
 
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Builder
 @NoArgsConstructor
@@ -16,8 +17,6 @@ public class Game {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @OneToOne(cascade = CascadeType.ALL)
-    private Board board;
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Unit> units;
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
