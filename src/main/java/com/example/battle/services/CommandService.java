@@ -1,6 +1,7 @@
 package com.example.battle.services;
 
 import com.example.battle.config.BoardConfiguration;
+import com.example.battle.config.WebSocketHandler;
 import com.example.battle.mapers.CommandMapper;
 import com.example.battle.model.Game;
 import com.example.battle.model.Position;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -27,9 +29,9 @@ public class CommandService {
     private final GameRepository gameRepository;
     private final UnitRepository unitRepository;
     private final GameService gameService;
-
     private final BoardConfiguration boardConfiguration;
     private final CommandMapper commandMapper;
+    private final WebSocketHandler webSocketHandler;
 
 
     @Transactional
@@ -81,6 +83,12 @@ public class CommandService {
                 }
             }
         }
+        try {
+            webSocketHandler.broadcast("Unit moved: " + commandDTO.getUnitId());
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException();
+        }
     }
 
     @Transactional
@@ -120,6 +128,12 @@ public class CommandService {
                 unitRepository.save(unit);
                 gameService.printBoard();
             }
+        }
+        try {
+            webSocketHandler.broadcast("Unit was firing: " + commandDTO.getUnitId());
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
