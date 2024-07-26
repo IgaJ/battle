@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -67,6 +66,10 @@ public class CommandService {
                             game.getUnits().remove(targetUnit);
                             gameRepository.save(game);
                             unitRepository.delete(targetUnit);
+                            if (game.getUnits().stream().noneMatch(u -> u.getColor().equals(targetUnit.getColor()) &&
+                                    u.getUnitStatus() == UnitStatus.ACTIVE)) {
+                                endGame(targetUnit.getColor());
+                            }
                         } else {
                             throw new RuntimeException("The vehicle cannot invade its own unit");
                         }
@@ -123,6 +126,9 @@ public class CommandService {
                     game.getUnits().remove(targetUnit);
                     gameRepository.save(game);
                     unitRepository.delete(targetUnit);
+                    if (game.getUnits().stream().noneMatch(u -> u.getColor().equals(targetUnit.getColor()) && u.getUnitStatus() == UnitStatus.ACTIVE)) {
+                        endGame(targetUnit.getColor());
+                    }
                 }
                 Command command = commandMapper.map(commandDTO);
                 command.setLastCommand(LocalDateTime.now());
@@ -159,6 +165,17 @@ public class CommandService {
                     fire(color, commandDTO);
                 }
             }
+        }
+    }
+
+    private void endGame(String losingColor) {
+        String winningColor = losingColor.equals("w") ? "b" : "w";
+        System.out.println("Game over. Player " + winningColor + " wins!");
+        try {
+            webSocketHandler.broadcast("Game over. Player " + winningColor + " wins!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
