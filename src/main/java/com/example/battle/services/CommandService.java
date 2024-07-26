@@ -65,7 +65,8 @@ public class CommandService {
                             targetUnit.setUnitStatus(UnitStatus.DESTROYED);
                             unit.setPosition(newPosition);
                             game.getUnits().remove(targetUnit);
-                            unitRepository.save(targetUnit);
+                            gameRepository.save(game);
+                            unitRepository.delete(targetUnit);
                         } else {
                             throw new RuntimeException("The vehicle cannot invade its own unit");
                         }
@@ -120,7 +121,8 @@ public class CommandService {
                     Unit targetUnit = targetUnitOptional.get();
                     targetUnit.setUnitStatus(UnitStatus.DESTROYED);
                     game.getUnits().remove(targetUnit);
-                    unitRepository.save(targetUnit);
+                    gameRepository.save(game);
+                    unitRepository.delete(targetUnit);
                 }
                 Command command = commandMapper.map(commandDTO);
                 command.setLastCommand(LocalDateTime.now());
