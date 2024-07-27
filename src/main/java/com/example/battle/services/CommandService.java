@@ -3,6 +3,7 @@ package com.example.battle.services;
 import com.example.battle.config.BoardConfiguration;
 import com.example.battle.config.WebSocketHandler;
 import com.example.battle.mapers.CommandMapper;
+import com.example.battle.exceptions.BattleGameException;
 import com.example.battle.model.Game;
 import com.example.battle.model.Position;
 import com.example.battle.model.commands.Command;
@@ -42,10 +43,10 @@ public class CommandService {
 
             if (unit != null && unit.getUnitStatus() == UnitStatus.ACTIVE) {
                 if (cannotExecuteCommand(commandDTO.getLastCommand(), unit.getRequiredInterval("move"))) {
-                    throw new RuntimeException("Too early to execute command. Wait");
+                    throw new BattleGameException("Too early to execute command. Wait");
                 }
                 if (!unit.getColor().equals(color)) {
-                    throw new RuntimeException("Incorrect player color");
+                    throw new BattleGameException("Incorrect player color");
                 }
                 Position newPosition = calculateNewPosition(
                         unit.getPosition(),
@@ -71,7 +72,7 @@ public class CommandService {
                                 endGame(targetUnit.getColor());
                             }
                         } else {
-                            throw new RuntimeException("The vehicle cannot invade its own unit");
+                            throw new BattleGameException("The vehicle cannot invade its own unit");
                         }
                     } else {
                         unit.setPosition(newPosition);
@@ -83,7 +84,7 @@ public class CommandService {
                     unitRepository.save(unit);
                     gameService.printBoard();
                 } else {
-                    throw new RuntimeException("Incorrect new position");
+                    throw new BattleGameException("Incorrect new position");
                 }
             }
         }
@@ -103,11 +104,11 @@ public class CommandService {
             Unit unit = game.getUnits().stream().filter(u -> Objects.equals(u.getId(), commandDTO.getUnitId())).findFirst().orElse(null);
             if (unit != null && unit.getUnitStatus() == UnitStatus.ACTIVE) {
                 if (cannotExecuteCommand(commandDTO.getLastCommand(), unit.getRequiredInterval("fire"))) {
-                    throw new RuntimeException("Too early to execute command. Wait");
+                    throw new BattleGameException("Too early to execute command. Wait");
                 }
 
                 if (!unit.getColor().equals(color)) {
-                    throw new RuntimeException("Incorrect player color");
+                    throw new BattleGameException("Incorrect player color");
                 }
 
                 Position newPosition = calculateNewPosition(

@@ -3,6 +3,7 @@ package com.example.battle.services;
 import com.example.battle.config.BoardConfiguration;
 import com.example.battle.config.UnitConfiguration;
 import com.example.battle.mapers.UnitMapper;
+import com.example.battle.exceptions.BattleGameException;
 import com.example.battle.model.Game;
 import com.example.battle.model.Position;
 import com.example.battle.model.units.*;
@@ -124,7 +125,7 @@ public class GameService {
             units.addAll(game.get().getUnits().stream()
                     .map(unitMapper::map).toList());
         } else {
-            throw new RuntimeException("No active game found");
+            throw new BattleGameException("No active game found");
         }
         return units;
     }
