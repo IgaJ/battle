@@ -44,7 +44,7 @@ public class GameService {
         return units.stream().map(unitMapper::map).collect(Collectors.toList());
     }
 
-    private void printBoard(List<Unit> units) {
+    public void printBoard(List<Unit> units) {
         Map<Position, Unit> unitPositionMap = new HashMap<>();
 
         // mapowane jednostki na pozycje

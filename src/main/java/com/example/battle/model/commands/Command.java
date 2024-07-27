@@ -20,7 +20,6 @@ public class Command {
     private Long gameId;
     private Long unitId;
     private LocalDateTime lastCommand;
-    private String color;
     private Direction direction;
     private int verticalSteps;
     private int horizontalSteps;

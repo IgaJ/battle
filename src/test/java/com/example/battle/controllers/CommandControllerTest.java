@@ -37,7 +37,7 @@ public class CommandControllerTest {
 
     @BeforeEach
     void prepare() throws JsonProcessingException {
-        commandDTO = new CommandDTO(null, 1L, 4L, null, null, Direction.DOWN, 1, 0);
+        commandDTO = new CommandDTO(null, 1L, 4L, null, Direction.DOWN, 1, 0);
         requestBody = objectMapper.writeValueAsString(commandDTO);
     }
 

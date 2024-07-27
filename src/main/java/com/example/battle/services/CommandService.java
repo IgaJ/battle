@@ -2,8 +2,8 @@ package com.example.battle.services;
 
 import com.example.battle.config.BoardConfiguration;
 import com.example.battle.config.WebSocketHandler;
-import com.example.battle.mapers.CommandMapper;
 import com.example.battle.exceptions.BattleGameException;
+import com.example.battle.mapers.CommandMapper;
 import com.example.battle.mapers.GameMapper;
 import com.example.battle.model.Game;
 import com.example.battle.model.GameDTO;
@@ -13,7 +13,6 @@ import com.example.battle.model.commands.CommandDTO;
 import com.example.battle.model.commands.Direction;
 import com.example.battle.model.units.*;
 import com.example.battle.repositories.GameRepository;
-import com.example.battle.repositories.UnitRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +28,6 @@ import java.util.Random;
 public class CommandService {
 
     private final GameRepository gameRepository;
-    private final UnitRepository unitRepository;
     private final GameService gameService;
     private final BoardConfiguration boardConfiguration;
     private final CommandMapper commandMapper;
@@ -39,65 +37,84 @@ public class CommandService {
 
     @Transactional
     public GameDTO move(String color, CommandDTO commandDTO) {
-        Optional<Game> gameOptional = gameRepository.findById(commandDTO.getGameId());
-        if (gameOptional.isPresent()) {
-            Game game = gameOptional.get();
-            Unit unit = game.getUnits().stream().filter(u -> Objects.equals(u.getId(), commandDTO.getUnitId())).findFirst().orElse(null);
-
-            if (unit != null && unit.getUnitStatus() == UnitStatus.ACTIVE) {
-                if (cannotExecuteCommand(commandDTO.getLastCommand(), unit.getRequiredInterval("move"))) {
-                    throw new BattleGameException("Too early to execute command. Wait");
-                }
-                if (!unit.getColor().equals(color)) {
-                    throw new BattleGameException("Incorrect player color");
-                }
-                Position newPosition = calculateNewPosition(
-                        unit.getPosition(),
-                        commandDTO.getDirection(),
-                        commandDTO.getVerticalSteps(),
-                        commandDTO.getHorizontalSteps()
-                );
-
-                if (isPositionValid(newPosition, boardConfiguration.getWidth(), boardConfiguration.getHeight())) {
-                    Optional<Unit> targetUnitOptional = game.getUnits().stream()
-                            .filter(found -> found.getPosition().equals(newPosition))
-                            .findFirst();
-                    if (targetUnitOptional.isPresent()) {
-                        Unit targetUnit = targetUnitOptional.get();
-                        if (!targetUnit.getColor().equals(unit.getColor())) {
-                            targetUnit.setUnitStatus(UnitStatus.DESTROYED);
-                            unit.setPosition(newPosition);
-                            game.getUnits().remove(targetUnit);
-                            gameRepository.save(game);
-                            unitRepository.delete(targetUnit);
-                            if (game.getUnits().stream().noneMatch(u -> u.getColor().equals(targetUnit.getColor()) &&
-                                    u.getUnitStatus() == UnitStatus.ACTIVE)) {
-                                endGame(targetUnit.getColor(), game);
-                            }
-                        } else {
-                            throw new BattleGameException("The vehicle cannot invade its own unit");
-                        }
-                    } else {
-                        unit.setPosition(newPosition);
-                        unit.setMoveCount(unit.getMoveCount() + 1);
-                    }
-                    Command command = commandMapper.map(commandDTO);
-                    command.setLastCommand(LocalDateTime.now());
-                    game.getCommandHistory().add(command);
-                    unitRepository.save(unit);
-                    gameService.printBoard();
-                } else {
-                    throw new BattleGameException("Incorrect new position");
-                }
-            }
+        Game game = gameRepository.findById(commandDTO.getGameId()).orElseThrow(() -> new BattleGameException("Can't find game of given Id"));
+        if (!game.isActive()) {
+            throw new BattleGameException("Selected game is not active");
         }
+        Unit unit = getUnitFromDatabase(color, commandDTO, "move");
+        Position newPosition = calculateNewPosition(
+                unit.getPosition(),
+                commandDTO.getDirection(),
+                commandDTO.getVerticalSteps(),
+                commandDTO.getHorizontalSteps()
+        );
+        Game gameAfterSave = null;
+        if (isPositionValid(newPosition, boardConfiguration.getWidth(), boardConfiguration.getHeight())) {
+            Optional<Unit> targetUnitOptional = game.getUnits().stream()
+                    .filter(found -> found.getPosition().equals(newPosition))
+                    .findFirst();
+            if (targetUnitOptional.isPresent()) {
+                Unit targetUnit = targetUnitOptional.get();
+                System.out.println("Target unit color: " + targetUnit.getColor());
+                if (targetUnit.getColor().equals(unit.getColor())) {
+                    throw new BattleGameException("The vehicle cannot invade its own unit");
+                }
+                targetUnit.setUnitStatus(UnitStatus.DESTROYED);
+                unit.setPosition(newPosition);
+                game.getUnits().remove(targetUnit);
+                Command command = commandMapper.map(commandDTO);
+                command.setLastCommand(LocalDateTime.now());
+                game.getCommandHistory().add(command);
+                if (game.getUnits().stream().noneMatch(u -> u.getColor().equals(targetUnit.getColor()) &&
+                        u.getUnitStatus() == UnitStatus.ACTIVE)) {
+                    endGame(targetUnit.getColor(), game);
+                }
+                gameAfterSave = gameRepository.save(game);
+                gameService.printBoard(gameAfterSave.getUnits());
+                return gameMapper.map(gameAfterSave);
+
+            } else {
+                unit.setPosition(newPosition);
+                unit.setMoveCount(unit.getMoveCount() + 1);
+            }
+            Command command = commandMapper.map(commandDTO);
+            command.setLastCommand(LocalDateTime.now());
+            game.getCommandHistory().add(command);
+            gameAfterSave = gameRepository.save(game);
+            gameService.printBoard(gameAfterSave.getUnits());
+        } else {
+            throw new BattleGameException("Incorrect new position");
+        }
+
+
         try {
             webSocketHandler.broadcast("Unit moved: " + commandDTO.getUnitId());
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException();
         }
-        return gameMapper.map(gameRepository.findById(commandDTO.getGameId()).orElseThrow(() -> new BattleGameException("Game not found with id " + commandDTO.getGameId())));
+        // should save!
+        return gameMapper.map(gameAfterSave);
+        //return gameMapper.map(gameRepository.findById(commandDTO.getGameId()).orElseThrow(() -> new BattleGameException("Game not found with id " + commandDTO.getGameId())));
+    }
+
+    private Unit getUnitFromDatabase(String color, CommandDTO commandDTO, String commandType) {
+        Optional<Game> gameOptional = gameRepository.findById(commandDTO.getGameId());
+        if (gameOptional.isPresent()) {
+            Game game = gameOptional.get();
+            Unit unit = game.getUnits().stream().filter(u -> Objects.equals(u.getId(), commandDTO.getUnitId())).findFirst().orElse(null);
+
+            if (unit != null && unit.getUnitStatus() == UnitStatus.ACTIVE) {
+                if (cannotExecuteCommand(commandDTO.getLastCommand(), unit.getRequiredInterval(commandType))) {
+                    throw new BattleGameException("Too early to execute command. Wait");
+                }
+                if (!unit.getColor().equals(color)) {
+                    throw new BattleGameException("Incorrect player color");
+                }
+                return unit;
+            }
+        }
+        throw new BattleGameException("Can't find valid unit of given Id");
     }
 
     @Transactional
@@ -105,43 +122,34 @@ public class CommandService {
         Optional<Game> gameOptional = gameRepository.findById(commandDTO.getGameId());
         if (gameOptional.isPresent()) {
             Game game = gameOptional.get();
-            Unit unit = game.getUnits().stream().filter(u -> Objects.equals(u.getId(), commandDTO.getUnitId())).findFirst().orElse(null);
-            if (unit != null && unit.getUnitStatus() == UnitStatus.ACTIVE) {
-                if (cannotExecuteCommand(commandDTO.getLastCommand(), unit.getRequiredInterval("fire"))) {
-                    throw new BattleGameException("Too early to execute command. Wait");
+            Unit unit = getUnitFromDatabase(color, commandDTO, "fire");
+
+            Position newPosition = calculateNewPosition(
+                    unit.getPosition(),
+                    commandDTO.getDirection(),
+                    commandDTO.getVerticalSteps(),
+                    commandDTO.getHorizontalSteps()
+            );
+            Optional<Unit> targetUnitOptional = game.getUnits().stream()
+                    .filter(found -> found.getPosition().equals(newPosition))
+                    .findFirst();
+
+            if (targetUnitOptional.isPresent()) {
+                Unit targetUnit = targetUnitOptional.get();
+                targetUnit.setUnitStatus(UnitStatus.DESTROYED);
+                game.getUnits().remove(targetUnit);
+                gameRepository.save(game);
+                if (game.getUnits().stream().noneMatch(u -> u.getColor().equals(targetUnit.getColor()) && u.getUnitStatus() == UnitStatus.ACTIVE)) {
+                    endGame(targetUnit.getColor(), game);
                 }
 
-                if (!unit.getColor().equals(color)) {
-                    throw new BattleGameException("Incorrect player color");
-                }
-
-                Position newPosition = calculateNewPosition(
-                        unit.getPosition(),
-                        commandDTO.getDirection(),
-                        commandDTO.getVerticalSteps(),
-                        commandDTO.getHorizontalSteps()
-                );
-                Optional<Unit> targetUnitOptional = game.getUnits().stream()
-                        .filter(found -> found.getPosition().equals(newPosition))
-                        .findFirst();
-
-                if (targetUnitOptional.isPresent()) {
-                    Unit targetUnit = targetUnitOptional.get();
-                    targetUnit.setUnitStatus(UnitStatus.DESTROYED);
-                    game.getUnits().remove(targetUnit);
-                    gameRepository.save(game);
-                    unitRepository.delete(targetUnit);
-                    if (game.getUnits().stream().noneMatch(u -> u.getColor().equals(targetUnit.getColor()) && u.getUnitStatus() == UnitStatus.ACTIVE)) {
-                        endGame(targetUnit.getColor(), game);
-                    }
-                }
-                Command command = commandMapper.map(commandDTO);
-                command.setLastCommand(LocalDateTime.now());
-                game.getCommandHistory().add(command);
-                unitRepository.save(unit);
-                gameService.printBoard();
             }
+            Command command = commandMapper.map(commandDTO);
+            command.setLastCommand(LocalDateTime.now());
+            game.getCommandHistory().add(command);
+            gameService.printBoard();
         }
+
         try {
             webSocketHandler.broadcast("Unit was firing: " + commandDTO.getUnitId());
         } catch (Exception e) {
@@ -157,7 +165,7 @@ public class CommandService {
             Game game = gameOptional.get();
             Unit unit = game.getUnits().stream().filter(u -> Objects.equals(u.getId(), commandDTO.getUnitId())).findFirst().orElse(null);
 
-            if (unit != null & unit.getUnitStatus() == UnitStatus.ACTIVE) {
+            if (unit != null && unit.getUnitStatus() == UnitStatus.ACTIVE) {
                 CommandDTO dto = generateRandomMove(commandDTO.getGameId(), commandDTO.getUnitId());
                 if (unit instanceof Archer) {
                     if (new Random().nextBoolean()) {
@@ -176,9 +184,10 @@ public class CommandService {
     }
 
     private void endGame(String losingColor, Game game) {
-        String winningColor = losingColor.equals("w") ? "b" : "w";
+        String winningColor = losingColor.equals("white") ? "black" : "white";
         game.setActive(false);
-        gameRepository.save(game);
+        Game gameSaved = gameRepository.save(game);
+        gameService.printBoard(gameSaved.getUnits());
         throw new BattleGameException("Game over. Player " + winningColor + " wins!");
     }
 
