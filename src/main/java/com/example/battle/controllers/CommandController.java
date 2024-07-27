@@ -1,5 +1,6 @@
 package com.example.battle.controllers;
 
+import com.example.battle.model.GameDTO;
 import com.example.battle.model.commands.CommandDTO;
 import com.example.battle.services.CommandService;
 import lombok.RequiredArgsConstructor;
@@ -14,20 +15,17 @@ public class CommandController {
     private final CommandService commandService;
 
     @PostMapping("/move")
-    public ResponseEntity<Void> moveUnit(@RequestParam String color, @RequestBody CommandDTO commandDTO) {
-        commandService.move(color, commandDTO);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<GameDTO> moveUnit(@RequestParam String color, @RequestBody CommandDTO commandDTO) {
+        return ResponseEntity.ok(commandService.move(color, commandDTO));
     }
 
     @PostMapping("/fire")
-    public ResponseEntity<Void> fire(@RequestParam String color, @RequestBody CommandDTO commandDTO) {
-        commandService.fire(color, commandDTO);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<GameDTO> fire(@RequestParam String color, @RequestBody CommandDTO commandDTO) {
+        return ResponseEntity.ok(commandService.fire(color, commandDTO));
     }
 
     @PostMapping("/random")
-    public ResponseEntity<Void> randomMove(@RequestParam String color, @RequestBody CommandDTO commandDTO) {
-        commandService.randomMove(color, commandDTO);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<GameDTO> randomMove(@RequestParam String color, @RequestBody CommandDTO commandDTO) {
+        return ResponseEntity.ok(commandService.randomMove(color, commandDTO));
     }
 }

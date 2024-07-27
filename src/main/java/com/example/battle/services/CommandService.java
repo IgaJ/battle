@@ -4,7 +4,9 @@ import com.example.battle.config.BoardConfiguration;
 import com.example.battle.config.WebSocketHandler;
 import com.example.battle.mapers.CommandMapper;
 import com.example.battle.exceptions.BattleGameException;
+import com.example.battle.mapers.GameMapper;
 import com.example.battle.model.Game;
+import com.example.battle.model.GameDTO;
 import com.example.battle.model.Position;
 import com.example.battle.model.commands.Command;
 import com.example.battle.model.commands.CommandDTO;
@@ -31,11 +33,12 @@ public class CommandService {
     private final GameService gameService;
     private final BoardConfiguration boardConfiguration;
     private final CommandMapper commandMapper;
+    private final GameMapper gameMapper;
     private final WebSocketHandler webSocketHandler;
 
 
     @Transactional
-    public void move(String color, CommandDTO commandDTO) {
+    public GameDTO move(String color, CommandDTO commandDTO) {
         Optional<Game> gameOptional = gameRepository.findById(commandDTO.getGameId());
         if (gameOptional.isPresent()) {
             Game game = gameOptional.get();
@@ -69,7 +72,7 @@ public class CommandService {
                             unitRepository.delete(targetUnit);
                             if (game.getUnits().stream().noneMatch(u -> u.getColor().equals(targetUnit.getColor()) &&
                                     u.getUnitStatus() == UnitStatus.ACTIVE)) {
-                                endGame(targetUnit.getColor());
+                                endGame(targetUnit.getColor(), game);
                             }
                         } else {
                             throw new BattleGameException("The vehicle cannot invade its own unit");
@@ -94,10 +97,11 @@ public class CommandService {
             e.printStackTrace();
             throw new RuntimeException();
         }
+        return gameMapper.map(gameRepository.findById(commandDTO.getGameId()).orElseThrow(() -> new BattleGameException("Game not found with id " + commandDTO.getGameId())));
     }
 
     @Transactional
-    public void fire(String color, CommandDTO commandDTO) {
+    public GameDTO fire(String color, CommandDTO commandDTO) {
         Optional<Game> gameOptional = gameRepository.findById(commandDTO.getGameId());
         if (gameOptional.isPresent()) {
             Game game = gameOptional.get();
@@ -128,7 +132,7 @@ public class CommandService {
                     gameRepository.save(game);
                     unitRepository.delete(targetUnit);
                     if (game.getUnits().stream().noneMatch(u -> u.getColor().equals(targetUnit.getColor()) && u.getUnitStatus() == UnitStatus.ACTIVE)) {
-                        endGame(targetUnit.getColor());
+                        endGame(targetUnit.getColor(), game);
                     }
                 }
                 Command command = commandMapper.map(commandDTO);
@@ -144,9 +148,10 @@ public class CommandService {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+        return gameMapper.map(gameRepository.findById(commandDTO.getGameId()).orElseThrow(() -> new BattleGameException("Game not found with id " + commandDTO.getGameId())));
     }
 
-    public void randomMove(String color, CommandDTO commandDTO) {
+    public GameDTO randomMove(String color, CommandDTO commandDTO) {
         Optional<Game> gameOptional = gameRepository.findById(commandDTO.getGameId());
         if (gameOptional.isPresent()) {
             Game game = gameOptional.get();
@@ -167,17 +172,14 @@ public class CommandService {
                 }
             }
         }
+        return gameMapper.map(gameRepository.findById(commandDTO.getGameId()).orElseThrow(() -> new BattleGameException("Game not found with id " + commandDTO.getGameId())));
     }
 
-    private void endGame(String losingColor) {
+    private void endGame(String losingColor, Game game) {
         String winningColor = losingColor.equals("w") ? "b" : "w";
-        System.out.println("Game over. Player " + winningColor + " wins!");
-        try {
-            webSocketHandler.broadcast("Game over. Player " + winningColor + " wins!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
+        game.setActive(false);
+        gameRepository.save(game);
+        throw new BattleGameException("Game over. Player " + winningColor + " wins!");
     }
 
     private CommandDTO generateRandomMove(Long gameId, Long unitId) {
