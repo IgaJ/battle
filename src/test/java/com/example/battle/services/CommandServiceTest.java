@@ -120,4 +120,28 @@ public class CommandServiceTest {
         Assertions.assertThrows(BattleGameException.class, () -> commandService.move("black", command),"The vehicle cannot invade its own unit");
     }
 
+    @Test
+    void fireShouldEliminateEnemyUnit() {
+        CommandDTO properCommand = new CommandDTO(null, 1L, 1L, LocalDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis() - FIFTEEN_SECONDS), ZoneId.of("UTC")), Direction.RIGHT, 0, 1);
+        List<Unit> units = new ArrayList<>();
+        Cannon cannonWhite = new Cannon(1L, UnitType.CANNON, "white", new Position(0, 1), UnitStatus.ACTIVE, 0);
+        Archer archerBlack = new Archer(4L, UnitType.ARCHER, "black", new Position(2, 2), UnitStatus.ACTIVE, 0);
+        Archer archerBlack2 = new Archer(5L, UnitType.ARCHER, "black", new Position(1, 1), UnitStatus.ACTIVE, 0);
+        units.add(cannonWhite);
+        units.add(archerBlack);
+        units.add(archerBlack2);
+        Game game = new Game(1L, units, new ArrayList<>(), true);
+        when(gameRepository.findById(1L)).thenReturn(Optional.of(game));
+        ArgumentCaptor<Game> gameArgumentCaptor = ArgumentCaptor.forClass(Game.class);
+        List<Unit> unitsChanged = new ArrayList<>(List.of(new Archer(1L, UnitType.ARCHER, "white", new Position(1, 1), UnitStatus.ACTIVE, 1),
+                new Archer(4L, UnitType.ARCHER, "black", new Position(2, 2), UnitStatus.ACTIVE, 0) ));
+        Game gameSaved = new Game(1L, unitsChanged, new ArrayList<>(), true);
+        when(gameRepository.save(any())).thenReturn(gameSaved);
+        GameDTO gameDTO = commandService.fire("white", properCommand);
+        Mockito.verify(gameRepository).save(gameArgumentCaptor.capture());
+        Game captured = gameArgumentCaptor.getValue();
+        assertEquals(2, captured.getUnits().size());
+    }
+
+
 }
