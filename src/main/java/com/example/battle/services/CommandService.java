@@ -42,7 +42,10 @@ public class CommandService {
         if (!game.isActive()) {
             throw new BattleGameException("Selected game is not active");
         }
-        Unit unit = getUnitFromDatabase(color, commandDTO, "move");
+        Unit unit = getAndValidateUnitFromDatabase(color, commandDTO, "move");
+        if(!unit.canMove(commandDTO.getVerticalSteps(), commandDTO.getHorizontalSteps())){
+            throw new BattleGameException("Can't move with given parameters");
+        }
         Position newPosition = calculateNewPosition(
                 unit.getPosition(),
                 commandDTO.getDirection(),
@@ -108,7 +111,7 @@ public class CommandService {
         Optional<Game> gameOptional = gameRepository.findById(commandDTO.getGameId());
         if (gameOptional.isPresent()) {
             Game game = gameOptional.get();
-            Unit unit = getUnitFromDatabase(color, commandDTO, "fire");
+            Unit unit = getAndValidateUnitFromDatabase(color, commandDTO, "fire");
 
             Position newPosition = calculateNewPosition(
                     unit.getPosition(),
@@ -182,7 +185,7 @@ public class CommandService {
         }
     }
 
-    private Unit getUnitFromDatabase(String color, CommandDTO commandDTO, String commandType) {
+    private Unit getAndValidateUnitFromDatabase(String color, CommandDTO commandDTO, String commandType) {
         Optional<Game> gameOptional = gameRepository.findById(commandDTO.getGameId());
         if (gameOptional.isPresent()) {
             Game game = gameOptional.get();

@@ -29,4 +29,11 @@ public class Transport extends Unit {
             throw new BattleGameException("Incorrect command for transport");
         }
     }
+
+    @Override
+    public boolean canMove(int verticalSteps, int horizontalSteps) {
+        int absVertical = Math.abs(verticalSteps);
+        int absHorizontal = Math.abs(horizontalSteps);
+        return (absVertical == 0 || absHorizontal == 0) && (absVertical <= 3 && absHorizontal <= 3);
+    }
 }

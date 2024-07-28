@@ -1,5 +1,6 @@
 package com.example.battle.model.units;
 
+import com.example.battle.exceptions.BattleGameException;
 import com.example.battle.model.*;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -24,8 +25,15 @@ public class Archer extends Unit {
     public long checkIfUnitCanExecuteCommand(String commandType) {
         if (commandType.equals("move")) {
             return 5;
-        } else {
+        } else if (commandType.equals("fire")){
             return 10;
+        } else {
+            throw new BattleGameException("Incorrect command for archer");
         }
+    }
+
+    @Override
+    public boolean canMove(int verticalSteps, int horizontalSteps) {
+        return Math.abs(verticalSteps) <= 1 && Math.abs(horizontalSteps) <= 1;
     }
 }

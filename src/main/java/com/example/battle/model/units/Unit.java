@@ -22,4 +22,6 @@ public abstract class Unit {
     private int moveCount;
 
     public abstract long checkIfUnitCanExecuteCommand(String commandType);
+
+    public abstract boolean canMove(int verticalSteps, int horizontalSteps);
 }

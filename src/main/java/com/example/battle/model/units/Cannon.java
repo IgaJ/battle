@@ -29,4 +29,9 @@ public class Cannon extends Unit {
             throw new BattleGameException("Incorrect command for cannon");
         }
     }
+
+    @Override
+    public boolean canMove(int verticalSteps, int horizontalSteps) {
+        return false;
+    }
 }
