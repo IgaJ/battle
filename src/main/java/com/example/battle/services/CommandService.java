@@ -34,9 +34,10 @@ public class CommandService {
     private final GameMapper gameMapper;
     private final WebSocketHandler webSocketHandler;
 
-
     @Transactional
     public GameDTO move(String color, CommandDTO commandDTO) {
+        validateCommandSteps(commandDTO);
+
         Game game = gameRepository.findById(commandDTO.getGameId()).orElseThrow(() -> new BattleGameException("Can't find game of given Id"));
         if (!game.isActive()) {
             throw new BattleGameException("Selected game is not active");
@@ -55,8 +56,16 @@ public class CommandService {
         Optional<Unit> targetUnitOptional = game.getUnits().stream()
                 .filter(found -> found.getPosition().equals(newPosition))
                 .findFirst();
+
+        Command command = commandMapper.map(commandDTO);
+        command.setLastCommand(LocalDateTime.now());
+        game.getCommandHistory().add(command);
+
         if (targetUnitOptional.isPresent()) {
             Unit targetUnit = targetUnitOptional.get();
+            if(unit.getUnitType() == UnitType.ARCHER) {
+                throw new BattleGameException("Archer unit cannot move to an occupied position");
+            }
             if (targetUnit.getColor().equals(unit.getColor())) {
                 throw new BattleGameException("The vehicle cannot invade its own unit");
             }
@@ -64,9 +73,7 @@ public class CommandService {
             targetUnit.setUnitStatus(UnitStatus.DESTROYED);
             unit.setPosition(newPosition);
             game.getUnits().remove(targetUnit);
-            Command command = commandMapper.map(commandDTO);
-            command.setLastCommand(LocalDateTime.now());
-            game.getCommandHistory().add(command);
+
             if (game.getUnits().stream().noneMatch(u -> u.getColor().equals(targetUnit.getColor()) &&
                     u.getUnitStatus() == UnitStatus.ACTIVE)) {
                 endGame(targetUnit.getColor(), game);
@@ -79,12 +86,9 @@ public class CommandService {
             unit.setPosition(newPosition);
             unit.setMoveCount(unit.getMoveCount() + 1);
         }
-        Command command = commandMapper.map(commandDTO);
-        command.setLastCommand(LocalDateTime.now());
-        game.getCommandHistory().add(command);
+
         gameAfterSave = gameRepository.save(game);
         gameService.printBoard(gameAfterSave.getUnits());
-
 
         try {
             webSocketHandler.broadcast("Unit moved: " + commandDTO.getUnitId());
@@ -97,27 +101,10 @@ public class CommandService {
         //return gameMapper.map(gameRepository.findById(commandDTO.getGameId()).orElseThrow(() -> new BattleGameException("Game not found with id " + commandDTO.getGameId())));
     }
 
-    private Unit getUnitFromDatabase(String color, CommandDTO commandDTO, String commandType) {
-        Optional<Game> gameOptional = gameRepository.findById(commandDTO.getGameId());
-        if (gameOptional.isPresent()) {
-            Game game = gameOptional.get();
-            Unit unit = game.getUnits().stream().filter(u -> Objects.equals(u.getId(), commandDTO.getUnitId())).findFirst().orElse(null);
-
-            if (unit != null && unit.getUnitStatus() == UnitStatus.ACTIVE) {
-                if (cannotExecuteCommand(commandDTO.getLastCommand(), unit.checkIfUnitCanExecuteCommand(commandType))) {
-                    throw new BattleGameException("Too early to execute command. Wait");
-                }
-                if (!unit.getColor().equals(color)) {
-                    throw new BattleGameException("Incorrect player color");
-                }
-                return unit;
-            }
-        }
-        throw new BattleGameException("Can't find valid unit of given Id");
-    }
-
     @Transactional
     public GameDTO fire(String color, CommandDTO commandDTO) {
+        validateCommandSteps(commandDTO);
+
         Optional<Game> gameOptional = gameRepository.findById(commandDTO.getGameId());
         if (gameOptional.isPresent()) {
             Game game = gameOptional.get();
@@ -180,6 +167,38 @@ public class CommandService {
             }
         }
         return gameMapper.map(gameRepository.findById(commandDTO.getGameId()).orElseThrow(() -> new BattleGameException("Game not found with id " + commandDTO.getGameId())));
+    }
+
+    private void validateCommandSteps(CommandDTO commandDTO) {
+        Direction direction = commandDTO.getDirection();
+        int verticalSteps = commandDTO.getVerticalSteps();
+        int horizontalSteps = commandDTO.getHorizontalSteps();
+
+        if ((direction == Direction.RIGHT || direction == Direction.LEFT) && verticalSteps != 0) {
+            throw new BattleGameException("Vertical steps should be 0 when direction is RIGHT or LEFT");
+        }
+        if ((direction == Direction.UP || direction == Direction.DOWN) && horizontalSteps != 0) {
+            throw new BattleGameException("Horizontal steps should be 0 when direction is UP or DOWN");
+        }
+    }
+
+    private Unit getUnitFromDatabase(String color, CommandDTO commandDTO, String commandType) {
+        Optional<Game> gameOptional = gameRepository.findById(commandDTO.getGameId());
+        if (gameOptional.isPresent()) {
+            Game game = gameOptional.get();
+            Unit unit = game.getUnits().stream().filter(u -> Objects.equals(u.getId(), commandDTO.getUnitId())).findFirst().orElse(null);
+
+            if (unit != null && unit.getUnitStatus() == UnitStatus.ACTIVE) {
+                if (cannotExecuteCommand(commandDTO.getLastCommand(), unit.checkIfUnitCanExecuteCommand(commandType))) {
+                    throw new BattleGameException("Too early to execute command. Wait");
+                }
+                if (!unit.getColor().equals(color)) {
+                    throw new BattleGameException("Incorrect player color");
+                }
+                return unit;
+            }
+        }
+        throw new BattleGameException("Can't find valid unit of given Id");
     }
 
     private void endGame(String losingColor, Game game) {
