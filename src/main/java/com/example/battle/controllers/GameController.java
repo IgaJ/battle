@@ -1,13 +1,11 @@
 package com.example.battle.controllers;
 
+import com.example.battle.model.GameDTO;
 import com.example.battle.model.units.UnitDTO;
 import com.example.battle.services.GameService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -17,18 +15,28 @@ import java.util.List;
 public class GameController {
     private final GameService gameService;
 
-    @PostMapping("/new")
-    public ResponseEntity<List<UnitDTO>> newGame() {
+    @PostMapping("/new") // tworzy nową grę
+    public ResponseEntity<GameDTO> newGame() {
         return ResponseEntity.ok(gameService.createNewGame());
     }
 
-    @GetMapping("/units")
-    public ResponseEntity<List<UnitDTO>> listUnits() {
+    @GetMapping("/{gameId}")
+    public ResponseEntity<GameDTO> getGameById(@PathVariable Long gameId) {
+        return ResponseEntity.ok(gameService.getGameById(gameId));
+    }
+
+    @GetMapping("/{gameId}/units")
+    public ResponseEntity<List<UnitDTO>> getUnits(@PathVariable Long gameId) {
+        return ResponseEntity.ok(gameService.getUnitsByGameId(gameId));
+    }
+
+    @GetMapping("/units") // for active game
+    public ResponseEntity<List<UnitDTO>> getUnitsInActiveGame() {
         return ResponseEntity.ok(gameService.findUnitsInActiveGame());
     }
 
-    @GetMapping("/board")
-    public void printBoard() {
+    @GetMapping("/board") // prints game board to console, admin helper method
+    public void printBoardInActiveGame() {
        gameService.printBoard();
     }
 }

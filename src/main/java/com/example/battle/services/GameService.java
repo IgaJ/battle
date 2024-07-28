@@ -2,9 +2,11 @@ package com.example.battle.services;
 
 import com.example.battle.config.BoardConfiguration;
 import com.example.battle.config.UnitConfiguration;
+import com.example.battle.mapers.GameMapper;
 import com.example.battle.mapers.UnitMapper;
 import com.example.battle.exceptions.BattleGameException;
 import com.example.battle.model.Game;
+import com.example.battle.model.GameDTO;
 import com.example.battle.model.Position;
 import com.example.battle.model.units.*;
 import com.example.battle.repositories.GameRepository;
@@ -21,9 +23,10 @@ public class GameService {
     private final GameRepository gameRepository;
     private final UnitConfiguration unitConfiguration;
     private final BoardConfiguration boardConfiguration;
+    private final GameMapper gameMapper;
     private final UnitMapper unitMapper;
     @PostConstruct
-    public List<UnitDTO> createNewGame() {
+    public GameDTO createNewGame() {
         List<Game> games = gameRepository.findAll();
         for (Game game : games) {
             game.setActive(false);
@@ -37,11 +40,10 @@ public class GameService {
         game.setUnits(units);
         game.setCommandHistory(new ArrayList<>());
         game.setActive(true);
-        gameRepository.save(game);
-
+        Game savedGame = gameRepository.save(game);
         printBoard(units);
 
-        return units.stream().map(unitMapper::map).collect(Collectors.toList());
+        return gameMapper.map(savedGame);
     }
 
     public void printBoard(List<Unit> units) {
@@ -111,13 +113,6 @@ public class GameService {
         }
     }
 
-    public List<UnitDTO> findAll() {
-        List<Unit> units = gameRepository.findAllUnits();
-        return units.stream()
-                .map(unitMapper::map)
-                .collect(Collectors.toList());
-    }
-
     public List<UnitDTO> findUnitsInActiveGame() {
         Optional<Game> game = gameRepository.findByActiveTrue();
         List<UnitDTO> units = new ArrayList<>();
@@ -128,6 +123,11 @@ public class GameService {
             throw new BattleGameException("No active game found");
         }
         return units;
+    }
+
+    public GameDTO getGameById(Long gameId) {
+        Game game = gameRepository.findById(gameId).orElseThrow(() -> new BattleGameException("Can't find by gameId"));
+        return gameMapper.map(game);
     }
 
     private Position randomPosition(int boardWidth, int boardHeight, List<Unit> existingUnits) {
@@ -143,8 +143,11 @@ public class GameService {
         return existingUnits.stream().anyMatch(unit -> unit.getPosition().equals(position));
     }
 
-
     public void printBoard() {
         gameRepository.findByActiveTrue().ifPresent(game -> printBoard(game.getUnits()));
+    }
+
+    public List<UnitDTO> getUnitsByGameId(Long gameId) {
+        return (gameRepository.findUnitsByGameId(gameId)).stream().map(unitMapper::map).collect(Collectors.toList());
     }
 }

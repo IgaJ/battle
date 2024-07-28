@@ -24,7 +24,7 @@ public class CommandController {
         return ResponseEntity.ok(commandService.fire(color, commandDTO));
     }
 
-    @PostMapping("/random")
+    @PostMapping("/random") // to be completed
     public ResponseEntity<GameDTO> randomMove(@RequestParam String color, @RequestBody CommandDTO commandDTO) {
         return ResponseEntity.ok(commandService.randomMove(color, commandDTO));
     }
