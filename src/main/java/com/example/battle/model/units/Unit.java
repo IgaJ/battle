@@ -23,5 +23,7 @@ public abstract class Unit {
 
     public abstract long checkIfUnitCanExecuteCommand(String commandType);
 
-    public abstract boolean canMove(int verticalSteps, int horizontalSteps);
+    public abstract boolean isCorrectMoveRange(int verticalSteps, int horizontalSteps);
+
+    public abstract boolean isCorrectFireRange(int verticalSteps, int horizontalSteps);
 }

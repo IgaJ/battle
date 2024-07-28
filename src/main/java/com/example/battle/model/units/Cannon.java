@@ -31,7 +31,12 @@ public class Cannon extends Unit {
     }
 
     @Override
-    public boolean canMove(int verticalSteps, int horizontalSteps) {
+    public boolean isCorrectMoveRange(int verticalSteps, int horizontalSteps) {
         return false;
+    }
+
+    @Override
+    public boolean isCorrectFireRange(int verticalSteps, int horizontalSteps) {
+        return true;
     }
 }

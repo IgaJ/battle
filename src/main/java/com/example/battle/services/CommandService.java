@@ -43,7 +43,7 @@ public class CommandService {
             throw new BattleGameException("Selected game is not active");
         }
         Unit unit = getAndValidateUnitFromDatabase(color, commandDTO, "move");
-        if(!unit.canMove(commandDTO.getVerticalSteps(), commandDTO.getHorizontalSteps())){
+        if(!unit.isCorrectMoveRange(commandDTO.getVerticalSteps(), commandDTO.getHorizontalSteps())){
             throw new BattleGameException("Can't move with given parameters");
         }
         Position newPosition = calculateNewPosition(
@@ -112,7 +112,9 @@ public class CommandService {
         if (gameOptional.isPresent()) {
             Game game = gameOptional.get();
             Unit unit = getAndValidateUnitFromDatabase(color, commandDTO, "fire");
-
+            if(!unit.isCorrectFireRange(commandDTO.getVerticalSteps(), commandDTO.getHorizontalSteps())){
+                throw new BattleGameException("Aim out of range");
+            }
             Position newPosition = calculateNewPosition(
                     unit.getPosition(),
                     commandDTO.getDirection(),

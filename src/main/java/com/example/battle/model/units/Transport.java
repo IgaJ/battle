@@ -31,9 +31,14 @@ public class Transport extends Unit {
     }
 
     @Override
-    public boolean canMove(int verticalSteps, int horizontalSteps) {
+    public boolean isCorrectMoveRange(int verticalSteps, int horizontalSteps) {
         int absVertical = Math.abs(verticalSteps);
         int absHorizontal = Math.abs(horizontalSteps);
         return (absVertical == 0 || absHorizontal == 0) && (absVertical <= 3 && absHorizontal <= 3);
+    }
+
+    @Override
+    public boolean isCorrectFireRange(int verticalSteps, int horizontalSteps) {
+        return false;
     }
 }

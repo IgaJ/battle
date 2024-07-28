@@ -33,7 +33,12 @@ public class Archer extends Unit {
     }
 
     @Override
-    public boolean canMove(int verticalSteps, int horizontalSteps) {
+    public boolean isCorrectMoveRange(int verticalSteps, int horizontalSteps) {
         return Math.abs(verticalSteps) <= 1 && Math.abs(horizontalSteps) <= 1;
+    }
+
+    @Override
+    public boolean isCorrectFireRange(int verticalSteps, int horizontalSteps) {
+        return verticalSteps==0 || horizontalSteps==0;
     }
 }
