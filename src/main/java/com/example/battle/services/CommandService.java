@@ -53,8 +53,8 @@ public class CommandService {
                 commandDTO.getHorizontalSteps()
         );
         Game gameAfterSave;
-        if (!isPositionValid(newPosition, boardConfiguration.getWidth(), boardConfiguration.getHeight())) {
-            throw new BattleGameException("Incorrect new position");
+        if (!isTargetPositionOnBoard(newPosition, boardConfiguration.getWidth(), boardConfiguration.getHeight())) {
+            throw new BattleGameException("Position out of board");
         }
         Optional<Unit> targetUnitOptional = game.getUnits().stream()
                 .filter(found -> found.getPosition().equals(newPosition))
@@ -112,7 +112,7 @@ public class CommandService {
             Game game = gameOptional.get();
             Unit unit = getAndValidateUnitFromDatabase(color, commandDTO, "fire");
             if(!unit.isCorrectFireRange(commandDTO.getVerticalSteps(), commandDTO.getHorizontalSteps())){
-                throw new BattleGameException("Aim out of range");
+                throw new BattleGameException("Target out of unit range");
             }
             Position newPosition = calculateNewPosition(
                     unit.getPosition(),
@@ -120,6 +120,11 @@ public class CommandService {
                     commandDTO.getVerticalSteps(),
                     commandDTO.getHorizontalSteps()
             );
+
+            if (!isTargetPositionOnBoard(newPosition, boardConfiguration.getWidth(), boardConfiguration.getHeight())) {
+                throw new BattleGameException("Position out of board");
+            }
+
             Optional<Unit> targetUnitOptional = game.getUnits().stream()
                     .filter(found -> found.getPosition().equals(newPosition))
                     .findFirst();
@@ -236,7 +241,7 @@ public class CommandService {
         return secondsSinceLastCommand < requiredInterval;
     }
 
-    private boolean isPositionValid(Position position, int width, int height) {
+    private boolean isTargetPositionOnBoard(Position position, int width, int height) {
         return position.getX() >= 0 && position.getX() < width && position.getY() >= 0 && position.getY() < height;
     }
 
