@@ -32,7 +32,7 @@ public class CommandService {
     private final BoardConfiguration boardConfiguration;
     private final CommandMapper commandMapper;
     private final GameMapper gameMapper;
-    private final WebSocketHandler webSocketHandler;
+
 
     @Transactional
     public GameDTO move(String color, CommandDTO commandDTO) {
@@ -93,13 +93,6 @@ public class CommandService {
 
         gameAfterSave = gameRepository.save(game);
         gameService.printBoard(gameAfterSave.getUnits());
-
-        try {
-            webSocketHandler.broadcast("Unit moved: " + commandDTO.getUnitId());
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException();
-        }
         return gameMapper.map(gameAfterSave);
     }
 
@@ -143,13 +136,6 @@ public class CommandService {
             command.setLastCommand(LocalDateTime.now());
             game.getCommandHistory().add(command);
             gameService.printBoard();
-        }
-
-        try {
-            webSocketHandler.broadcast("Unit was firing: " + commandDTO.getUnitId());
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
         }
         return gameMapper.map(gameRepository.findById(commandDTO.getGameId()).orElseThrow(() -> new BattleGameException("Game not found with id " + commandDTO.getGameId())));
     }

@@ -42,8 +42,7 @@ public class CommandServiceTest {
     BoardConfiguration boardConfiguration = Mockito.mock(BoardConfiguration.class);
     CommandMapper commandMapper = new CommandMapperImpl();
     GameMapper gameMapper = new GameMapperImpl();
-    WebSocketHandler webSocketHandler = Mockito.mock(WebSocketHandler.class);
-    CommandService commandService = new CommandService(gameRepository, gameService, boardConfiguration, commandMapper, gameMapper, webSocketHandler);
+    CommandService commandService = new CommandService(gameRepository, gameService, boardConfiguration, commandMapper, gameMapper);
 
 
     @BeforeEach
