@@ -52,7 +52,7 @@ public class CommandService {
                 commandDTO.getVerticalSteps(),
                 commandDTO.getHorizontalSteps()
         );
-        Game gameAfterSave = null;
+        Game gameAfterSave;
         if (!isPositionValid(newPosition, boardConfiguration.getWidth(), boardConfiguration.getHeight())) {
             throw new BattleGameException("Incorrect new position");
         }
@@ -75,6 +75,7 @@ public class CommandService {
 
             targetUnit.setUnitStatus(UnitStatus.DESTROYED);
             unit.setPosition(newPosition);
+            unit.setMoveCount(unit.getMoveCount() + 1);
             game.getUnits().remove(targetUnit);
 
             if (game.getUnits().stream().noneMatch(u -> u.getColor().equals(targetUnit.getColor()) &&
@@ -99,9 +100,7 @@ public class CommandService {
             e.printStackTrace();
             throw new RuntimeException();
         }
-        // should save!
         return gameMapper.map(gameAfterSave);
-        //return gameMapper.map(gameRepository.findById(commandDTO.getGameId()).orElseThrow(() -> new BattleGameException("Game not found with id " + commandDTO.getGameId())));
     }
 
     @Transactional
