@@ -49,42 +49,41 @@ public class CommandService {
                 commandDTO.getHorizontalSteps()
         );
         Game gameAfterSave = null;
-        if (isPositionValid(newPosition, boardConfiguration.getWidth(), boardConfiguration.getHeight())) {
-            Optional<Unit> targetUnitOptional = game.getUnits().stream()
-                    .filter(found -> found.getPosition().equals(newPosition))
-                    .findFirst();
-            if (targetUnitOptional.isPresent()) {
-                Unit targetUnit = targetUnitOptional.get();
-                System.out.println("Target unit color: " + targetUnit.getColor());
-                if (targetUnit.getColor().equals(unit.getColor())) {
-                    throw new BattleGameException("The vehicle cannot invade its own unit");
-                }
-                targetUnit.setUnitStatus(UnitStatus.DESTROYED);
-                unit.setPosition(newPosition);
-                game.getUnits().remove(targetUnit);
-                Command command = commandMapper.map(commandDTO);
-                command.setLastCommand(LocalDateTime.now());
-                game.getCommandHistory().add(command);
-                if (game.getUnits().stream().noneMatch(u -> u.getColor().equals(targetUnit.getColor()) &&
-                        u.getUnitStatus() == UnitStatus.ACTIVE)) {
-                    endGame(targetUnit.getColor(), game);
-                }
-                gameAfterSave = gameRepository.save(game);
-                gameService.printBoard(gameAfterSave.getUnits());
-                return gameMapper.map(gameAfterSave);
-
-            } else {
-                unit.setPosition(newPosition);
-                unit.setMoveCount(unit.getMoveCount() + 1);
+        if (!isPositionValid(newPosition, boardConfiguration.getWidth(), boardConfiguration.getHeight())) {
+            throw new BattleGameException("Incorrect new position");
+        }
+        Optional<Unit> targetUnitOptional = game.getUnits().stream()
+                .filter(found -> found.getPosition().equals(newPosition))
+                .findFirst();
+        if (targetUnitOptional.isPresent()) {
+            Unit targetUnit = targetUnitOptional.get();
+            if (targetUnit.getColor().equals(unit.getColor())) {
+                throw new BattleGameException("The vehicle cannot invade its own unit");
             }
+
+            targetUnit.setUnitStatus(UnitStatus.DESTROYED);
+            unit.setPosition(newPosition);
+            game.getUnits().remove(targetUnit);
             Command command = commandMapper.map(commandDTO);
             command.setLastCommand(LocalDateTime.now());
             game.getCommandHistory().add(command);
+            if (game.getUnits().stream().noneMatch(u -> u.getColor().equals(targetUnit.getColor()) &&
+                    u.getUnitStatus() == UnitStatus.ACTIVE)) {
+                endGame(targetUnit.getColor(), game);
+            }
             gameAfterSave = gameRepository.save(game);
             gameService.printBoard(gameAfterSave.getUnits());
+            return gameMapper.map(gameAfterSave);
+
         } else {
-            throw new BattleGameException("Incorrect new position");
+            unit.setPosition(newPosition);
+            unit.setMoveCount(unit.getMoveCount() + 1);
         }
+        Command command = commandMapper.map(commandDTO);
+        command.setLastCommand(LocalDateTime.now());
+        game.getCommandHistory().add(command);
+        gameAfterSave = gameRepository.save(game);
+        gameService.printBoard(gameAfterSave.getUnits());
 
 
         try {
@@ -105,7 +104,7 @@ public class CommandService {
             Unit unit = game.getUnits().stream().filter(u -> Objects.equals(u.getId(), commandDTO.getUnitId())).findFirst().orElse(null);
 
             if (unit != null && unit.getUnitStatus() == UnitStatus.ACTIVE) {
-                if (cannotExecuteCommand(commandDTO.getLastCommand(), unit.getRequiredInterval(commandType))) {
+                if (cannotExecuteCommand(commandDTO.getLastCommand(), unit.checkIfUnitCanExecuteCommand(commandType))) {
                     throw new BattleGameException("Too early to execute command. Wait");
                 }
                 if (!unit.getColor().equals(color)) {
