@@ -21,5 +21,5 @@ public abstract class Unit {
     private UnitStatus unitStatus;
     private int moveCount;
 
-    public abstract long getRequiredInterval(String commandType);
+    public abstract long checkIfUnitCanExecuteCommand(String commandType);
 }

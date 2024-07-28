@@ -1,5 +1,6 @@
 package com.example.battle.model.units;
 
+import com.example.battle.exceptions.BattleGameException;
 import com.example.battle.model.*;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -21,11 +22,11 @@ public class Transport extends Unit {
     }
 
     @Override
-    public long getRequiredInterval(String commandType) {
+    public long checkIfUnitCanExecuteCommand(String commandType) {
         if (commandType.equals("move")) {
             return 7;
         } else {
-            throw new RuntimeException("Incorrect command for transport");
+            throw new BattleGameException("Incorrect command for transport");
         }
     }
 }

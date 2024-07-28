@@ -21,13 +21,11 @@ public class Archer extends Unit {
     }
 
     @Override
-    public long getRequiredInterval(String commandType) {
-        if(commandType.equals("move")) {
+    public long checkIfUnitCanExecuteCommand(String commandType) {
+        if (commandType.equals("move")) {
             return 5;
-        } else if (commandType.equals("fire")) {
+        } else {
             return 10;
-        } else  {
-            throw new RuntimeException("Incorrect command for an archer");
         }
     }
 }
